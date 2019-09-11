@@ -37,7 +37,7 @@ import org.simpleframework.xml.ElementList;
 class PayloadInfo {
 
     /**
-     * The <code>deleteFilesAfterSubmit</code> attribute, default value is false
+     * The <code>deleteFilesAfterSubmit</code> attribute, default value is true
      */
     @Attribute(name = "deleteFilesAfterSubmit", required = false)
     private Boolean deleteFilesAfterSubmit;
@@ -127,6 +127,6 @@ class PayloadInfo {
      * @return <code>true</code> when the files should be deleted, <code>false</code> if not.
      */
     boolean shouldDeleteFilesAfterSubmit() {
-        return (this.deleteFilesAfterSubmit != null ? this.deleteFilesAfterSubmit.booleanValue() : false);
+        return (this.deleteFilesAfterSubmit != null ? this.deleteFilesAfterSubmit.booleanValue() : true);
     }
 }

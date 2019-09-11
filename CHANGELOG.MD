@@ -11,6 +11,9 @@ in the main Holodeck B2B project.
 ### Added
 * Initial release split from the main Holodeck B2B project.
 
+### Changed
+* Default is now to delete the payload files after successful submission. [#1](https://github.com/holodeck-b2b/file-backend/issues/1) 
+
 ### Fixed  
 * Concurrency issue in `SubmitFromFile` worker that may caused a single MMD to be submitted multiple times.
 
