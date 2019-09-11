@@ -1,5 +1,5 @@
 # Holodeck B2B file based back-end integration
-Is an extension for Holodeck B2B v5.0.0 or later that implements the _Submit_, _Notify_ and _Deliver_ operations between the gateway and back-end system using a file based API. 
+An extension for Holodeck B2B that implements the _Submit_, _Notify_ and _Deliver_ operations using a file based API. 
 
 ## API Specification
 ### Submission
