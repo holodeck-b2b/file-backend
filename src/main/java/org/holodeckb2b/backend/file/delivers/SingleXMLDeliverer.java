@@ -45,7 +45,7 @@ import org.holodeckb2b.interfaces.messagemodel.IPayload;
 import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
 
 /**
- * Is the {@link IMessageDeliverer} that implements the <i>"ebms"</i> format of the default file delivery method.
+ * Is the {@link IMessageDeliverer} that implements the <i>"single_xml"</i> format of the file delivery method.
  * <p>It delivers the message unit to the business application by writing all information of the message unit info,
  * <b>including</b> the payload data of a <i>User Message</i> message unit to one XML file. The format of the XML
  * document is defined by the XML schema <code>http://holodeck-b2b.org/schemas/2018/01/delivery/single_xml</code>.
