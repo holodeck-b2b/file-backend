@@ -3,13 +3,21 @@ An extension for Holodeck B2B that implements the _Submit_, _Notify_ and _Delive
 
 ## API Specification
 ### Submission
-As described on the [Holodeck B2B website](http://holodeck-b2b.org/documentation/messaging-configuration/) the information the back-end needs to provide to Holodeck B2B when it wants to send data to a trading partner consists of _meta-data_ which is used to control the message exchange and _payloads_ which contain the actual business data to be send. In this back-end integration both the meta-data and documents to send must be provided as files. The meta-data file is specified by a [XML Schema](src/main/resources/xsd/messagemetadata.xsd). How much meta-data the back-end needs to supply on submssion depends on the P-Mode used. Together it must form a complete set of meta-data required for sending the message to the trading partner.  
+As described on the [Holodeck B2B website](http://holodeck-b2b.org/documentation/messaging-configuration/) the information the back-end needs to provide to Holodeck B2B when it wants to send data to a trading partner consists of 
+* _meta-data_ which is used to control the message exchange and 
+* _payloads_ which contain the actual business data to be sent.  
 
-When submitting the back-end system should first write the files containing the business data to send and then the meta-data file (this is also the most logical sequence as the meta-data file must contain the locations of the payload files). The meta-data file must have the "mmd" extension to be picked up and submitted to the Holodeck B2B Core. The Core will check if the submission together with the P-Mode creates a complete set of meta-data and if the submission can be accepted. If this is the case the meta-data file's extension is changed to "accepted". The payload files are automatically removed unless the `//PayloadInfo/@deleteAfterSubmit` attribute is set to _false_. 
+In this back-end integration both the meta-data and documents to be sent must be provided as files. 
+The meta-data file is specified by an [XML Schema](src/main/resources/xsd/messagemetadata.xsd). How much meta-data the back-end needs to supply on submssion depends on the P-Mode used. Together it must form a complete set of meta-data required for sending the message to the trading partner.  
+
+When submitting, the back-end system should first write the files containing the business data to send and then the meta-data file (this is also the most logical sequence as the meta-data file must contain the locations of the payload files). 
+The meta-data file must have the "mmd" extension to be picked up and submitted to the Holodeck B2B Core. 
+The Core will check if the submission together with the P-Mode creates a complete set of meta-data and if the submission can be accepted. If this is the case the meta-data file's extension is changed to "accepted". The payload files are automatically removed unless the `//PayloadInfo/@deleteAfterSubmit` attribute is set to _false_. 
 If there is an error and the submission is rejected the extension is changed to "rejected". Additionally a file with the same name as the meta-data file but with extension "err" is created. It contains information about the cause of the rejection.  
 
 ### Delivery
-For the delivery of received _User Messages_ this integration offers three options, two of which write the meta-data and payloads of the received message to separate files and one creating one big file containing everything. The difference between the first two options is the format of the meta-data file. This can be either the same structure as used on submission or a copy of the `eb:Messaging` element from the ebMS message. In the latter case each `eb:PartInfo` element has an additional _part property_ (i.e. a `//eb:PartProperties/eb:Property` element) named _org:holodeckb2b:location_ that points to the file containing the payload data.
+For the delivery of received _User Messages_ this integration offers three options, two of which write the meta-data and payloads of the received message to separate files and a third that creates one big file containing everything. 
+The difference between the first two options is the format of the meta-data file. This can be either the same structure as used on submission or a copy of the `eb:Messaging` element from the ebMS message. In the latter case each `eb:PartInfo` element has an additional _part property_ (i.e. a `//eb:PartProperties/eb:Property` element) named _org:holodeckb2b:location_ that points to the file containing the payload data.
 **Example:**
 ```xml
 <eb3:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
@@ -83,7 +91,7 @@ When the "single file" option is used an XML document is created which contains 
 </ebmsMessage>
 ```
 ### Notify
-As _Signal Messages_ do not contain business data the notify operation only writes a XML document with the meta-data to a file. Similar to last two options of the the deliver operation for _User Messages_ the XML document contains a copy of the ebMS header with the difference being the root element which is either `eb:Messaging` or the custom `ebmsMessage`. When a _Receipt_ is notified to the back-end the content of the `eb:Receipt` element is replaced with a `ReceiptChild` element that contains the qualified name of the first element of the original content. The `ReceiptChild` element is defined in its own namespace _http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild_ (see [this XML Schema](src/main/resources/xsd/delivery_rcpt_child.xsd))
+As _Signal Messages_ do not contain business data the notify operation only writes an XML document with the meta-data to a file. Similar to the last two options of the the deliver operation for _User Messages_ the XML document contains a copy of the ebMS header with the difference being the root element which is either `eb:Messaging` or the custom `ebmsMessage`. When a _Receipt_ is notified to the back-end the content of the `eb:Receipt` element is replaced with a `ReceiptChild` element that contains the qualified name of the first element of the original content. The `ReceiptChild` element is defined in its own namespace _http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild_ (see [this XML Schema](src/main/resources/xsd/delivery_rcpt_child.xsd))
 Since the meta-data document used for submissions is tailored specifically to _User Messages_ it cannot be used for the notify operation. 
 **Example for Receipt:**
 ```xml
