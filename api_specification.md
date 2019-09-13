@@ -9,6 +9,7 @@ If there is an error and the submission is rejected the extension is changed to 
 
 ### Deliver
 For the delivery of received _User Messages_ this integration offers three options, two of which write the meta-data and payloads of the received message to separate files and one creating one big file containing everything. The difference between the first two options is the format of the meta-data file. This can be either the same structure as used on submission or a copy of the `eb:Messaging` element from the ebMS message. In the latter case each `eb:PartInfo` element has an additional _part property_ (i.e. a `//eb:PartProperties/eb:Property` element) named _org:holodeckb2b:location_ that points to the file containing the payload data.  
+
 **Example:**
 ```xml
 <eb3:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
@@ -45,6 +46,7 @@ For the delivery of received _User Messages_ this integration offers three optio
 </eb3:Messaging>
 ```
 When the "single file" option is used an XML document is created which contains a copy of the `eb:UserMessage` element from the received message and a `Payload` element for each payload of the message. Again a _part property_, in this case named _org:holodeckb2b:ref_, is used to link the meta-data in the header to the payload. The structure of the document is described in [this XML schema](src/main/resources/xsd/single_xml_delivery.xsd).   
+
 **Example:**
 ```xml
 <ebmsMessage xmlns="http://holodeck-b2b.org/schemas/2018/01/delivery/single_xml">
@@ -84,6 +86,7 @@ When the "single file" option is used an XML document is created which contains 
 ### Notify
 As _Signal Messages_ do not contain business data the notify operation only writes a XML document with the meta-data to a file. Similar to last two options of the the deliver operation for _User Messages_ the XML document contains a copy of the ebMS header with the difference being the root element which is either `eb:Messaging` or the custom `ebmsMessage`. When a _Receipt_ is notified to the back-end the content of the `eb:Receipt` element is replaced with a `ReceiptChild` element that contains the qualified name of the first element of the original content. The `ReceiptChild` element is defined in its own namespace _http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild_ (see [this XML Schema](src/main/resources/xsd/delivery_rcpt_child.xsd))
 Since the meta-data document used for submissions is tailored specifically to _User Messages_ it cannot be used for the notify operation.  
+
 **Example for Receipt:**
 ```xml
 <eb3:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
