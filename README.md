@@ -2,7 +2,7 @@
 An extension for Holodeck B2B that implements the _Submit_, _Notify_ and _Deliver_ operations using a file based API. 
 
 ## API Specification
-### Submission
+### Submit
 As described on the [Holodeck B2B website](http://holodeck-b2b.org/documentation/messaging-configuration/) the information the back-end needs to provide to Holodeck B2B when it wants to send data to a trading partner consists of 
 * _meta-data_ which is used to control the message exchange and 
 * _payloads_ which contain the actual business data to be sent.  
@@ -15,7 +15,7 @@ The meta-data file must have the "mmd" extension to be picked up and submitted t
 The Core will check if the submission together with the P-Mode creates a complete set of meta-data and if the submission can be accepted. If this is the case the meta-data file's extension is changed to "accepted". The payload files are automatically removed unless the `//PayloadInfo/@deleteAfterSubmit` attribute is set to _false_. 
 If there is an error and the submission is rejected the extension is changed to "rejected". Additionally a file with the same name as the meta-data file but with extension "err" is created. It contains information about the cause of the rejection.  
 
-### Delivery
+### Deliver
 For the delivery of received _User Messages_ this integration offers three options, two of which write the meta-data and payloads of the received message to separate files and a third that creates one big file containing everything. 
 The difference between the first two options is the format of the meta-data file. This can be either the same structure as used on submission or a copy of the `eb:Messaging` element from the ebMS message. In the latter case each `eb:PartInfo` element has an additional _part property_ (i.e. a `//eb:PartProperties/eb:Property` element) named _org:holodeckb2b:location_ that points to the file containing the payload data.
 **Example:**
@@ -111,14 +111,14 @@ Since the meta-data document used for submissions is tailored specifically to _U
 __________________
 For more information on using Holodeck B2B visit http://holodeck-b2b.org  
 Lead developer: Sander Fieten  
-Code hosted at https://github.com/holodeck-b2b/file-backend
+Code hosted at https://github.com/holodeck-b2b/file-backend  
 Issue tracker https://github.com/holodeck-b2b/file-backend/issues  
 
 ## Installation
 Normally there is no need to install this extension manually as it is already included in the default distribution package you can download from the Holodeck B2B website or Github repository of the main project. In case you need to install the extension manually just copy the jar file to the `lib` directory of the Holodeck B2B instance. Please note that the extension requires a Holodeck B2B version 5.x.  
 
 ## Configuration
-### Submission
+### Submit
 The Submit operation is implemented as a Holodeck B2B "worker" which is configured in the `workers.xml` configuration file. The worker's implementation class is `org.holodeckb2b.backend.file.SubmitOperation` and takes one parameter "watchPath" which points to the directory where the back-end writes the meta-data files. It is recommended to specify an absolute path, but in case a relative path is provided it is evaluated with the Holodeck B2B home directory as base path.  
 The default distribution package already has this worker configured for submissions to the `«HB2B_HOME»/data/msg_out` directory. If required multiple workers, watching different directories can be configured. 
 
