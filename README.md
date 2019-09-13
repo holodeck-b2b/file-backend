@@ -4,7 +4,7 @@ An extension for Holodeck B2B that implements the _Submit_, _Notify_ and _Delive
 __________________
 For more information on using Holodeck B2B visit http://holodeck-b2b.org  
 Lead developer: Sander Fieten  
-Code hosted at https://github.com/holodeck-b2b/file-backend
+Code hosted at https://github.com/holodeck-b2b/file-backend  
 Issue tracker https://github.com/holodeck-b2b/file-backend/issues  
 
 ## Installation
