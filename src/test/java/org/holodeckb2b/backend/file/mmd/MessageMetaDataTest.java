@@ -17,7 +17,6 @@
 package org.holodeckb2b.backend.file.mmd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,8 +26,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.holodeckb2b.backend.file.mmd.CollaborationInfo;
-import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.common.messagemodel.Payload;
 import org.holodeckb2b.common.messagemodel.UserMessage;
 import org.holodeckb2b.interfaces.general.IDescription;
@@ -227,7 +224,7 @@ public class MessageMetaDataTest {
             assertEquals("H8MQXJ", mmd.getMessageId());
             assertEquals("UGA08vL5hsdNfC-sGoV2RD", mmd.getRefToMessageId());
 
-            assertFalse(mmd.shouldDeleteFilesAfterSubmit());
+            assertTrue(mmd.shouldDeleteFilesAfterSubmit());
         } catch (final Exception ex) {
             ex.printStackTrace();
             fail();
