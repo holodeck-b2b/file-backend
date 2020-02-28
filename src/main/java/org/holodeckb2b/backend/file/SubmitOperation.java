@@ -74,7 +74,8 @@ public class SubmitOperation extends AbstractWorkerTask {
             log.error("Unable to configure task: Missing required parameter \"watchPath\"");
             throw new TaskConfigurationException("Missing required parameter \"watchPath\"");
         } else if (!Paths.get(pathParameter).isAbsolute())
-            watchPath = Paths.get(HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome(), pathParameter).toString();
+            watchPath = HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome().resolve(pathParameter)
+            																								.toString();
         else
             watchPath = pathParameter;
 
