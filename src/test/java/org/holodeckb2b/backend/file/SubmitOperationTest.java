@@ -22,12 +22,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.holodeckb2b.common.testhelpers.HolodeckB2BTestCore;
 import org.holodeckb2b.common.testhelpers.Submitter;
+import org.holodeckb2b.common.testhelpers.TestUtils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
 import org.junit.jupiter.api.AfterEach;
@@ -40,23 +42,22 @@ import org.junit.jupiter.api.Test;
  */
 public class SubmitOperationTest {
 
-    private static final String basePath = SubmitOperationTest.class.getClassLoader().getResource(".").getPath() 
-    										+ "submission";    
+    private static final Path basePath = TestUtils.getTestBasePath().resolve("submission");    
     
     private int numOfMMDs;
     
     @BeforeEach
     public void setUp() throws Exception {
-    	HolodeckB2BCoreInterface.setImplementation(new HolodeckB2BTestCore(basePath));
+    	HolodeckB2BCoreInterface.setImplementation(new HolodeckB2BTestCore(basePath.toString()));
 
-        File submitDir = new File(basePath);
+        File submitDir = basePath.toFile();
         if (submitDir.exists())
         	FileUtils.deleteDirectory(submitDir);        
         FileUtils.forceMkdir(submitDir);
         
         numOfMMDs = new Random().nextInt(100);
         for(int i = 0; i < numOfMMDs; i++) { 
-        	try (FileWriter fw = new FileWriter(basePath + "/test_submission_" + i + ".mmd")) {
+        	try (FileWriter fw = new FileWriter(basePath.resolve("test_submission_" + i + ".mmd").toFile())) {
         		fw.write(
 	    				"<MessageMetaData xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" + 
 	    				" xmlns=\"http://holodeck-b2b.org/schemas/2014/06/mmd\">" + 
@@ -77,7 +78,7 @@ public class SubmitOperationTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-    	File submitDir = new File(basePath);
+    	File submitDir = basePath.toFile();
         if (submitDir.exists())
         	FileUtils.deleteDirectory(submitDir);                
     }
@@ -87,7 +88,7 @@ public class SubmitOperationTest {
         SubmitOperation worker = new SubmitOperation();
 
         HashMap<String, Object> params = new HashMap<>();
-        params.put("watchPath", basePath);
+        params.put("watchPath", basePath.toString());
         try {
             worker.setParameters(params);
         } catch (TaskConfigurationException e) {
@@ -105,7 +106,7 @@ public class SubmitOperationTest {
     	final int numOfWorkers = Math.max(1, new Random().nextInt(5));    	
     	
         HashMap<String, Object> params = new HashMap<>();
-        params.put("watchPath", basePath);
+        params.put("watchPath", basePath.toString());
         
         final Thread[] workers = new Thread[numOfWorkers];
         try {
