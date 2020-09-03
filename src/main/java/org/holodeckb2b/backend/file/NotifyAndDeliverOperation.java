@@ -25,6 +25,7 @@ import java.util.Map;
 import org.holodeckb2b.backend.file.delivers.EbmsFileDeliverer;
 import org.holodeckb2b.backend.file.delivers.MMDDeliverer;
 import org.holodeckb2b.backend.file.delivers.SingleXMLDeliverer;
+import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.IMessageDelivererFactory;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
@@ -158,16 +159,22 @@ public class NotifyAndDeliverOperation implements IMessageDelivererFactory {
      */
     private boolean checkDirectory() {
         try {
-            final Path path = Paths.get(deliveryDir);
-
+            Path path = Paths.get(deliveryDir);            
+            if (!path.isAbsolute())
+            	path = HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome().resolve(deliveryDir);
+            																								
             // Test if given path exists and is a directory
-            if (path == null || !Files.isDirectory(path) || !Files.isWritable(path))
+            if (!Files.isDirectory(path) || !Files.isWritable(path))
                 // Not a writable directory!
                 return false;
+
+            deliveryDir = path.toString() + "/";
+            
+    		return true;
+
         } catch (final Exception ex) {
             return false;
         }
 
-        return true;
     }
 }
