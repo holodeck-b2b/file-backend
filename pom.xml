@@ -11,7 +11,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<holodeckb2b.version>5.0.0</holodeckb2b.version>
+		<holodeckb2b.version>5.0.1</holodeckb2b.version>
 		<axis2.version>1.7.7</axis2.version>
 	</properties>
 	<name>Holodeck B2B - File based back end</name>
