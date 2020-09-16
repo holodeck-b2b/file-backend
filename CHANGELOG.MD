@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.0.1
+##### 2020-09-16
+### Changed
+* Use a temporary extension when writing meta-data files [#5](https://github.com/holodeck-b2b/file-backend/issues/5)
+
+### Fixed
+* Namespace declararion missing in single XML delivery [#4](https://github.com/holodeck-b2b/file-backend/issues/4)
+* Duplicate occurrence of eb3:PayloadInfo elements in single XML delivery [#6](https://github.com/holodeck-b2b/file-backend/issues/6)
+
 ## 1.0.0
 ##### 2020-09-03
 NOTE: Although this is the initial release of the project this change log also contains the
