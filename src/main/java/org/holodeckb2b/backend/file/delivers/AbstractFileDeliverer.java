@@ -16,7 +16,6 @@
  */
 package org.holodeckb2b.backend.file.delivers;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,8 +24,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.PartInfo;
 import org.holodeckb2b.common.util.Utils;
@@ -47,7 +46,12 @@ import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
 public abstract class AbstractFileDeliverer implements IMessageDeliverer {
-
+	/**
+	 * Extension to use when writing the files to disk. This extension is used to prevent the back-end from picking up
+	 * files that are still being written.
+	 */
+	protected static final String TMP_EXTENSION = ".processing"; 
+			
     /**
      * The where the files should be stored
      */
@@ -56,7 +60,7 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
     /**
      * Logger
      */
-    protected Log   log = LogFactory.getLog(this.getClass());
+    protected Logger   log = LogManager.getLogger(this.getClass());
 
     /**
      * Constructs a new deliverer which will write the files to the given directory.
@@ -85,36 +89,40 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
     protected void deliverUserMessage(final IUserMessage usrMsgUnit) throws MessageDeliveryException {
         log.debug("Delivering user message with msgId=" + usrMsgUnit.getMessageId());
 
-        // We first convert the user message into a MMD document
-        final MessageMetaData mmd = new MessageMetaData(usrMsgUnit);
-
-        // Copy the payload files to specified directory and create new list of payload info
-        //  to reflect new locations
+        // We first convert the user message into a MMD document so info can be edited
+        final MessageMetaData mmd = new MessageMetaData(usrMsgUnit);        
         final Collection<IPayload>    copiedPLs = new ArrayList<>();
         try {
-            if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
-                log.trace("Copy all payload files to delivery directory");
-                for(final IPayload p : mmd.getPayloads()) {
-                    final Path newPath = copyPayloadFile(p, mmd.getMessageId());
-                    if (newPath != null)
-                        ((PartInfo) p).setContentLocation(newPath.toString());
-                    copiedPLs.add(p);
-                }
-                log.trace("Copied all payload files, set as new payload info in MMD");
-                mmd.setPayloads(copiedPLs);
-            }
+	        if (!Utils.isNullOrEmpty(mmd.getPayloads()) && payloadsAsFile()) {
+	        	log.debug("Copy all payload files to delivery directory");
+		        // The payload files should be copied to delivery directory and the MMD info should be
+	        	// updated to reference the new location of the payloads
+	            for(final IPayload p : mmd.getPayloads()) {
+	                final Path newPath = copyPayloadFile(p, mmd.getMessageId());
+	                if (newPath != null)
+	                        ((PartInfo) p).setContentLocation(newPath.toString());
+	                copiedPLs.add(p);
+	            }
+	            log.trace("Copied all payload files, set as new payload info in MMD");
+	            mmd.setPayloads(copiedPLs);
+	        }
+	            
             log.trace("Write message meta data to file");
-            writeUserMessageInfoToFile(mmd);
-            log.debug("User message with msgID=" + mmd.getMessageId() + " successfully delivered");
+            final String outFile = writeUserMessageInfoToFile(mmd);
+            log.debug("User message [msgID={}] delivered to {}", mmd.getMessageId(), outFile);
         } catch (final IOException ex) {
             log.error("An error occurred while delivering the user message [" + mmd.getMessageId()
                                                                     + "]\n\tError details: " + ex.getMessage());
             // Something went wrong writing files to the delivery directory, but some payload files
             // may already been copied and should be deleted
-            if (!copiedPLs.isEmpty()) {
-                log.debug("Remove already copied payload files from delivery directory");
+            if (!copiedPLs.isEmpty()) {            	
+                log.trace("Remove already copied payload files from delivery directory");
                 for(final IPayload p : copiedPLs)
-                    (new File(p.getContentLocation())).delete();
+                	try {
+                		Files.deleteIfExists(Paths.get(p.getContentLocation()));
+	                } catch (IOException io) {
+	                    log.error("Could not remove temp file [" + p.getContentLocation() + "]! Remove manually.");
+	                }
             }
             // And signal failure
             throw new MessageDeliveryException("Unable to deliver user message [" + mmd.getMessageId()
@@ -123,14 +131,47 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
     }
 
     /**
+     * Writes the user message data to a file.
+     *
+     * @param mmd           The user message unit meta data.
+     * @return Path of the file that contains the message (meta-)data
+     * @throws IOException  When the information could not be written to disk.
+     */
+    protected abstract String writeUserMessageInfoToFile(MessageMetaData mmd) throws IOException;
+    
+    /**
+     * Indicates whether the payloads included with the user message should be copied to the delivery directory.
+     * 
+     * @return	<code>true</code> if the payloads should be copied to the delivery directory, <code>false</code> if not
+     */
+    protected abstract boolean payloadsAsFile(); 
+    
+    /**
      * Delivers the signal message (Error or Receipt) to business application.
      *
      * @param sigMsgUnit        The signal message message unit to deliver
      * @throws MessageDeliveryException When an error occurs while delivering the signal message to the business
      *                                  application
      */
-    protected abstract void deliverSignalMessage(ISignalMessage sigMsgUnit) throws MessageDeliveryException;
-
+    protected abstract void deliverSignalMessage(ISignalMessage sigMsgUnit) throws MessageDeliveryException;    
+    
+    /**
+     * Helper method that will change the temporary "processing" extension into the final "xml" extension. As there 
+     * could already exist a file with the same name and "xml" extension the method calls {@link 
+     * Utils#createFileWithUniqueName(String)} to ensure that the xml file can be written.
+     *  
+     * @param tmpFilePath	the path to the temp file
+     * @return				the path to the xml file
+     * @throws IOException	when the file could not be moved
+     */
+    protected String changeExt(Path tmpFilePath) throws IOException {
+    	String filename = tmpFilePath.toString();
+    	filename = filename.substring(0, filename.lastIndexOf(TMP_EXTENSION)) + ".xml";
+    	
+    	return Files.move(tmpFilePath, Utils.createFileWithUniqueName(filename), StandardCopyOption.REPLACE_EXISTING)
+    				.toString();    	
+    }
+    
     /**
      * Helper method to copy a the payload content to <i>delivery directory</i>.
      *
@@ -182,13 +223,4 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
 
         return targetPath.toAbsolutePath();
     }
-
-    /**
-     * Helper method to write the user message meta data to a file.
-     *
-     * @param mmd           The user message unit meta data.
-     * @throws IOException  When the information could not be written to disk.
-     */
-    protected abstract void writeUserMessageInfoToFile(MessageMetaData mmd) throws IOException;
-
 }

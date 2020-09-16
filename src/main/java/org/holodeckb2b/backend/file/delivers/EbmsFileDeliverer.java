@@ -122,7 +122,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
     /**
      * The QName of the container element that contains the message info, i.e. the <code>eb:Messaging</code> element
      */
-    protected static final QName ROOT_QNAME = new QName(EbMSConstants.EBMS3_NS_URI, "Messaging",
+    private static final QName ROOT_QNAME = new QName(EbMSConstants.EBMS3_NS_URI, "Messaging",
                                                            EbMSConstants.EBMS3_NS_PREFIX);
 
     /**
@@ -133,21 +133,28 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
     public EbmsFileDeliverer(final String dir) {
         super(dir);
     }
+    
+    /*
+     * Payloads should be copied to the delivery directory
+     */
+    @Override
+    protected boolean payloadsAsFile() {
+    	return true;
+    }
 
     /**
      * Writes the user message meta data to file using the same structure as in the ebMS header.
      *
      * @param mmd           The user message meta data.
+     * @return	Path of the file that contains the message (meta-)data
      * @throws IOException  When the information could not be written to disk.
      */
     @Override
-    protected void writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
-        final OMFactory   f = OMAbstractFactory.getOMFactory();
-        final OMElement    container = f.createOMElement(ROOT_QNAME);
-        container.declareNamespace(EbMSConstants.EBMS3_NS_URI, "eb");
-
+    protected String writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
+    	
+    	// First set the location as additional part property
+    	log.trace("Set payload file locations as properties");
         if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
-            log.trace("Add payload info to XML container");
             // We add the local file location as a Part property
             for (final IPayload p : mmd.getPayloads()) {
                 final Property locationProp = new Property();
@@ -157,12 +164,12 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
             }
         }
 
-        log.trace("Add message info to XML container");
+        log.trace("Create delivery XML document and add message info");
         // Add the information on the user message to the container
+        final OMElement  container = createContainerElement();
         final OMElement  usrMsgElement = UserMessageElement.createElement(container, mmd);
-        log.trace("Information complete, write XML document to file");
-
-        writeXMLDocument(container, mmd.getMessageId());
+        log.trace("Information complete, write XML document to file");        
+        return writeXMLDocument(container, mmd.getMessageId());
     }
 
     /**
@@ -175,7 +182,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      */
     @Override
     protected void deliverSignalMessage(final ISignalMessage sigMsgUnit) throws MessageDeliveryException {
-        final OMElement   container = createContainerElementName();
+        final OMElement   container = createContainerElement();
 
         if (sigMsgUnit instanceof IReceipt) {
             log.trace("Add receipt meta data to XML");
@@ -185,7 +192,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
             ErrorSignalElement.createElement(container, (IErrorMessage) sigMsgUnit);
         }
 
-        log.trace("Added signal meta data to XML, write to disk");
+        log.trace("Added signal meta data to XML, write to file");
         try {
             writeXMLDocument(container, sigMsgUnit.getMessageId());
             log.debug("Signal message with msgID=" + sigMsgUnit.getMessageId() + " successfully delivered");
@@ -203,7 +210,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      *
      * @return  The root element of the delivery document.
      */
-    protected OMElement createContainerElementName() {
+    protected OMElement createContainerElement() {
         final OMFactory   f = OMAbstractFactory.getOMFactory();
         final OMElement rootElement = f.createOMElement(ROOT_QNAME);
         rootElement.declareNamespace(EbMSConstants.EBMS3_NS_URI, EbMSConstants.EBMS3_NS_PREFIX);
@@ -222,24 +229,25 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      */
     private String writeXMLDocument(final OMElement xml, final String msgId) throws IOException {
         final Path msgFilePath = Utils.createFileWithUniqueName(directory + "mi-"
-                                                                    + msgId.replaceAll("[^a-zA-Z0-9.-]", "_")
-                                                                    + ".xml");
+												                + msgId.replaceAll("[^a-zA-Z0-9.-]", "_")
+												                + TMP_EXTENSION);
 
-        try (final FileWriter fw = new FileWriter(msgFilePath.toString())) {
-            final XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(fw);
-            xml.serialize(writer);
-            writer.flush();
-            writer.close();
-            return msgFilePath.toString();
-        } catch (final Exception ex) {
-            // Can not write the message info XML to file -> delivery not possible
-            // Try to remove the already created file
-            try {
-                Files.deleteIfExists(msgFilePath);
-            } catch (IOException io) {
-                log.error("Could not remove temp file [" + msgFilePath.toString() + "]! Remove manually.");
-            }
-            throw new IOException("Error writing message unit info to file!", ex);
-        }
+		try {
+			final FileWriter fw = new FileWriter(msgFilePath.toString());
+			final XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(fw);
+			xml.serialize(writer);
+			writer.flush();
+			fw.close();
+			return changeExt(msgFilePath);
+		} catch (final Exception ex) {
+			// Can not write the message info XML to file -> delivery not possible
+			// Try to remove the already created file
+			try {
+				Files.deleteIfExists(msgFilePath);
+			} catch (IOException io) {
+				log.error("Could not remove temp file [" + msgFilePath.toString() + "]! Remove manually.");
+			}
+			throw new IOException("Error writing message unit info to file!", ex);
+		}
     }
 }

@@ -53,13 +53,22 @@ public class MMDDeliverer extends AbstractFileDeliverer {
         // Not supported, this deliverer only delivers user messages!
     }
 
+    /*
+     * The payloads should be written to the delivery directory
+     */
     @Override
-    protected void writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
+    protected boolean payloadsAsFile() {
+    	return true;
+    }
+    
+    @Override
+    protected String writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
         final Path mmdFilePath = Utils.createFileWithUniqueName(directory
                                                             + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
-                                                            + ".mmd.xml");
+                                                            + ".mmd" + TMP_EXTENSION);
         try {
             mmd.writeToFile(new File(mmdFilePath.toString()));
+            return changeExt(mmdFilePath);
         } catch (IOException ex) {
             // Something went wrong on writing the mmd file, try to remove the already created file
             try {
