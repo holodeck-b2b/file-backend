@@ -19,9 +19,9 @@ package org.holodeckb2b.backend.file.delivers;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
+import java.io.StringWriter;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
@@ -36,13 +36,10 @@ import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.Property;
 import org.holodeckb2b.common.util.Utils;
-import org.holodeckb2b.ebms3.packaging.PayloadInfoElement;
 import org.holodeckb2b.ebms3.packaging.UserMessageElement;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
-import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.general.EbMSConstants;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
-import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
 
 /**
  * Is the {@link IMessageDeliverer} that implements the <i>"single_xml"</i> format of the file delivery method.
@@ -133,13 +130,21 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
         super(dir);
     }
 
+    /*
+     * Payloads don't need to be copied as they are integrated into the XML
+     */
+    @Override
+    protected boolean payloadsAsFile() {
+    	return false;
+    }
+    
     /**
-     * Create the root element of the meta-data document.
+     * Create the root element of the delivery document.
      *
      * @return  The root element of the delivery document.
      */
     @Override
-	protected OMElement createContainerElementName() {
+	protected OMElement createContainerElement() {
         final OMFactory   f = OMAbstractFactory.getOMFactory();
         final OMElement rootElement = f.createOMElement(XML_ROOT_NAME, DELIVERY_NS_URI, XMLConstants.DEFAULT_NS_PREFIX);
         // Declare the namespaces
@@ -150,106 +155,97 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
     }
 
     /**
-     * Delivers the user message to business application.
+     * Writes the user message meta data and payload data to a single file using the same structure for the meta-data 
+     * as in the ebMS header.
      *
-     * @param usrMsgUnit        The user message message unit to deliver
-     * @throws MessageDeliveryException When an error occurs while delivering the user message to the business
-     *                                  application
+     * @param mmd           The user message meta data.
+     * @return	Path of the file that contains the message data
+     * @throws IOException  When the information could not be written to disk.
      */
     @Override
-    protected void deliverUserMessage(final IUserMessage usrMsgUnit) throws MessageDeliveryException {
-        log.debug("Delivering user message with msgId=" + usrMsgUnit.getMessageId());
+    protected String writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
 
-        // We first convert the user message into a MMD document
-        final MessageMetaData mmd = new MessageMetaData(usrMsgUnit);
-
-        final OMElement    container = createContainerElementName();
-
-        log.debug("Add general message info to XML container");
-        // Add the information on the user message to the container
-        final OMElement  usrMsgElement = UserMessageElement.createElement(container, mmd);
-
+        // Generate id values for the Payload elements to include later
         if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
-            log.trace("Add payload meta info to XML container");
-            // Generate a element id and set this a reference in payload property
-            int i = 1;
-            for (final IPayload p : mmd.getPayloads()) {
-                final Property refProp = new Property();
-                refProp.setName("org:holodeckb2b:ref");
-                refProp.setValue("pl-" + i++);
-                p.getProperties().add(refProp);
-            }
-            PayloadInfoElement.createElement(usrMsgElement, mmd.getPayloads());
+        	int i = 1;
+        	for (final IPayload p : mmd.getPayloads()) {
+        		final Property refProp = new Property();
+        		refProp.setName("org:holodeckb2b:ref");
+        		refProp.setValue("pl-" + i++);
+        		p.getProperties().add(refProp);
+        	}
         }
+        
+        // Create the document and UserMessage child element 
+        final OMElement  usrMsgElement = UserMessageElement.createElement(createContainerElement(), mmd);
 
-        String msgFilePath = null;
-        FileWriter fw = null;
-        try {
-            msgFilePath = Utils.createFileWithUniqueName(directory + "message-"
-                                                            + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
-                                                            + ".xml").toString();
-            log.trace("Message meta data complete, start writing this to file " + msgFilePath);
-            fw = new FileWriter(msgFilePath);
+        Path msgFilePath = Utils.createFileWithUniqueName(directory + "message-"
+											                + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
+											                + TMP_EXTENSION);
+		log.trace("Message meta data complete, start writing this to file " + msgFilePath.toString());
+        try (FileWriter fw = new FileWriter(msgFilePath.toFile())) {
             final XMLStreamWriter xmlWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(fw);
             log.trace("Write the meta data to file");
             xmlWriter.writeStartElement(XML_ROOT_NAME);
+            xmlWriter.setDefaultNamespace(DELIVERY_NS_URI);
+            xmlWriter.writeNamespace("", DELIVERY_NS_URI);
             usrMsgElement.serialize(xmlWriter);
             xmlWriter.flush();
-            xmlWriter.close();
             log.trace("Meta data writen to file");
             if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
                 log.debug("Write payload contents");
-                fw.write("<Payloads>");
+                xmlWriter.writeStartElement(DELIVERY_NS_URI, "Payloads");
                 int i = 1;
                 for(final IPayload p : mmd.getPayloads()) {
                     log.trace("Create <Payload> element");
-                    fw.write("<Payload xml:id=\"pl-" + i++ + "\">");
-                    writeEncodedPayload(p.getContentLocation(), fw);
-                    fw.write("</Payload>\n");
+                    xmlWriter.writeStartElement(DELIVERY_NS_URI, "Payload");
+                    xmlWriter.writeAttribute("xml:id", "pl-" + i++);
+                    xmlWriter.writeCharacters(encodePayload(p.getContentLocation()));
+                    xmlWriter.writeEndElement();
                 }
                 log.trace("Close the <Payloads> element");
-                fw.write("</Payloads>\n");
+                xmlWriter.writeEndElement();
             }
-            fw.write("</" + XML_ROOT_NAME + ">");
+            xmlWriter.writeEndDocument();
             fw.close();
-            log.debug("User message with msgID=" + mmd.getMessageId() + " successfully delivered");
+            return changeExt(msgFilePath);
         } catch (IOException | XMLStreamException ex) {
             log.error("An error occurred while delivering the user message [" + mmd.getMessageId()
                                                                     + "]\n\tError details: " + ex.getMessage());
             // Remove the delivery file (if it was already created)
-            if (!Utils.isNullOrEmpty(msgFilePath))
-                try {
-                    if (fw != null) fw.close();
-                    Files.deleteIfExists(Paths.get(msgFilePath));
-                } catch (IOException io) {
-                    log.error("Could not remove temp file [" + msgFilePath.toString() + "]! Remove manually.");
-                }
+            try {
+                Files.deleteIfExists(msgFilePath);
+            } catch (IOException io) {
+                log.error("Could not remove temp file [" + msgFilePath.toString() + "]! Remove manually.");
+            }
             // And signal failure
-            throw new MessageDeliveryException("Unable to deliver user message [" + mmd.getMessageId()
+            throw new IOException("Unable to deliver user message [" + mmd.getMessageId()
                                                     + "]. Error details: " + ex.getMessage());
         }
     }
 
     /**
-     * Helper method to write the payload content base64 encoded to an output stream.
+     * Helper method create the base64 encoded version of the payload
      *
      * @param sourceFile        The file to add to the output
-     * @param output            The output writer
+     * @return the base64 encoded payload
      * @throws IOException      When reading from the source or writing to the output fails
      */
-    private void writeEncodedPayload(final String sourceFile, final Writer output) throws IOException {
-        final Base64EncodingWriterOutputStream b64os;
-        try (FileInputStream fis = new FileInputStream(sourceFile)) {
-            b64os = new Base64EncodingWriterOutputStream(output);
+    private String encodePayload(final String sourceFile) throws IOException {
+    	final StringWriter b64Payload = new StringWriter();
+        try (FileInputStream fis = new FileInputStream(sourceFile);
+        	 Base64EncodingWriterOutputStream b64os = new Base64EncodingWriterOutputStream(b64Payload)) {
             final byte[] buffer = new byte[4096];
             int r = fis.read(buffer);
             while (r > 0) {
                 b64os.write(buffer, 0, r);
                 r = fis.read(buffer);
             }
+            b64os.complete();
+            b64os.flush();
         }
-        b64os.complete();
-        b64os.flush();
+        
+        return b64Payload.toString();
     }
 
 }
