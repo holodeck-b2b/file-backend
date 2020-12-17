@@ -29,7 +29,7 @@ XML documents of this type are used when exchanging messages between Holodeck B2
         <xs:documentation>In version 1.2 of the schema the default value for the @deleteFilesAfterSubmit attribute of the PayloadInfo element changed to <i>true</i> to indicate that payload files are by default removed after submission.</xs:documentation>
     </xs:annotation>
     <xs:import namespace="http://www.w3.org/XML/1998/namespace"
-        schemaLocation="http://www.w3.org/2001/03/xml.xsd"/>
+        schemaLocation="http://www.w3.org/2001/xml.xsd"/>
     <xs:element name="MessageMetaData" type="tns:MessageMetaDataType">
         <xs:annotation>
             <xs:documentation xml:lang="en">A message that needs to be transferred between two business applications translates into a UserMessage message unit in an ebMS v3 message. Therefore the meta data information is structured like the standard ebMS header element for such a message unit. 
@@ -201,7 +201,7 @@ If this element occurs multiple all instances MUST identify the same business pa
         </xs:sequence>
         <xs:attribute default="true" name="deleteFilesAfterSubmit" type="xs:boolean">
             <xs:annotation>
-                <xs:documentation>This attribute can be used to indicate whether the files containing the payload data should be removed by Holodeck B2B when the message is succesfully submitted. When not supplied or set to <i>true</i> the files are automatically removed on successful submission. If set to <i>false</i> the </o><i>Producer</i> application is responsible for deleting the payload file. </xs:documentation>
+                <xs:documentation>This attribute can be used to indicate whether the files containing the payload data should be removed by Holodeck B2B when the message is succesfully submitted. When not supplied or set to <i>true</i> the files are automatically removed on successful submission. If set to <i>false</i> the <i>Producer</i> application is responsible for deleting the payload file.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
