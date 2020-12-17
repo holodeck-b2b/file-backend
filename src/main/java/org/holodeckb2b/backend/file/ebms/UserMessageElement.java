@@ -20,7 +20,7 @@ import java.util.Collection;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.MessageInfoElement;
 import org.holodeckb2b.ebms3.packaging.MessagePropertiesElement;
 import org.holodeckb2b.ebms3.packaging.PartyInfoElement.TradingPartner.ElementName;

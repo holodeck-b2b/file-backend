@@ -33,7 +33,8 @@ import org.holodeckb2b.backend.file.ebms.ReceiptElement;
 import org.holodeckb2b.backend.file.ebms.UserMessageElement;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.Property;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.FileUtils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.ErrorSignalElement;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
@@ -228,7 +229,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      * @throws IOException When the XML can not be written to disk
      */
     private String writeXMLDocument(final OMElement xml, final String msgId) throws IOException {
-        final Path msgFilePath = Utils.createFileWithUniqueName(directory + "mi-"
+        final Path msgFilePath = FileUtils.createFileWithUniqueName(directory + "mi-"
 												                + msgId.replaceAll("[^a-zA-Z0-9.-]", "_")
 												                + TMP_EXTENSION);
 

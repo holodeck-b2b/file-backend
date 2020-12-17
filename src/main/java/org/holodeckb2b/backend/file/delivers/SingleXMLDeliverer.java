@@ -35,7 +35,8 @@ import org.apache.axiom.util.base64.Base64EncodingWriterOutputStream;
 import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.Property;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.FileUtils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.UserMessageElement;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.general.EbMSConstants;
@@ -179,7 +180,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
         // Create the document and UserMessage child element 
         final OMElement  usrMsgElement = UserMessageElement.createElement(createContainerElement(), mmd);
 
-        Path msgFilePath = Utils.createFileWithUniqueName(directory + "message-"
+        Path msgFilePath = FileUtils.createFileWithUniqueName(directory + "message-"
 											                + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
 											                + TMP_EXTENSION);
 		log.trace("Message meta data complete, start writing this to file " + msgFilePath.toString());

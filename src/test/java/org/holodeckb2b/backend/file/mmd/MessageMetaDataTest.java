@@ -28,6 +28,7 @@ import java.util.Iterator;
 
 import org.holodeckb2b.common.messagemodel.Payload;
 import org.holodeckb2b.common.messagemodel.UserMessage;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.general.IDescription;
 import org.holodeckb2b.interfaces.general.IPartyId;
 import org.holodeckb2b.interfaces.general.IProperty;
@@ -118,7 +119,7 @@ public class MessageMetaDataTest {
             final MessageMetaData mmd = MessageMetaData.createFromFile(f);
 
             assertNotNull(mmd);
-            assertEquals(org.holodeckb2b.common.util.Utils.fromXMLDateTime("2014-08-14T15:50:00Z"), mmd.getTimestamp());
+            assertEquals(Utils.fromXMLDateTime("2014-08-14T15:50:00Z"), mmd.getTimestamp());
             assertEquals("H8MQXJ", mmd.getMessageId());
             assertEquals("UGA08vL5hsdNfC-sGoV2RD", mmd.getRefToMessageId());
 
@@ -220,7 +221,7 @@ public class MessageMetaDataTest {
             final File   f = new File(path);
             final MessageMetaData mmd = MessageMetaData.createFromFile(f);
             assertNotNull(mmd);
-            assertEquals(org.holodeckb2b.common.util.Utils.fromXMLDateTime("2014-08-14T15:50:00Z"), mmd.getTimestamp());
+            assertEquals(Utils.fromXMLDateTime("2014-08-14T15:50:00Z"), mmd.getTimestamp());
             assertEquals("H8MQXJ", mmd.getMessageId());
             assertEquals("UGA08vL5hsdNfC-sGoV2RD", mmd.getRefToMessageId());
 
@@ -235,7 +236,7 @@ public class MessageMetaDataTest {
             final File   f = new File(path);
             final MessageMetaData mmd = MessageMetaData.createFromFile(f);
             assertNotNull(mmd);
-            assertEquals(org.holodeckb2b.common.util.Utils.fromXMLDateTime("2015-12-21T15:50:00Z"), mmd.getTimestamp());
+            assertEquals(Utils.fromXMLDateTime("2015-12-21T15:50:00Z"), mmd.getTimestamp());
             assertEquals("n-soaDLzuliyRmzSlBe7", mmd.getMessageId());
             assertNull(mmd.getRefToMessageId());
 

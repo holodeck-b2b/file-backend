@@ -28,7 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.PartInfo;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.FileUtils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
@@ -168,7 +169,7 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
     	String filename = tmpFilePath.toString();
     	filename = filename.substring(0, filename.lastIndexOf(TMP_EXTENSION)) + ".xml";
     	
-    	return Files.move(tmpFilePath, Utils.createFileWithUniqueName(filename), StandardCopyOption.REPLACE_EXISTING)
+    	return Files.move(tmpFilePath, FileUtils.createFileWithUniqueName(filename), StandardCopyOption.REPLACE_EXISTING)
     				.toString();    	
     }
     
@@ -198,12 +199,12 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
         String mimeType = p.getMimeType();
         if (mimeType == null || mimeType.isEmpty()) {
             // No MIME type given in message, try to detect from content
-            try { mimeType = Utils.detectMimeType(sourcePath.toFile()); }
+            try { mimeType = FileUtils.detectMimeType(sourcePath.toFile()); }
             catch (final IOException ex) { mimeType = null; } // Unable to detect the MIME Type
         }
-        final String ext = Utils.getExtension(mimeType);
+        final String ext = FileUtils.getExtension(mimeType);
 
-        final Path targetPath = Utils.createFileWithUniqueName(directory + "pl-"
+        final Path targetPath = FileUtils.createFileWithUniqueName(directory + "pl-"
                                                                + (msgId + "-" + plRef).replaceAll("[^a-zA-Z0-9.-]", "_")
                                                                + (ext != null ? ext : ""));
 

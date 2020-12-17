@@ -19,7 +19,7 @@ package org.holodeckb2b.backend.file.mmd;
 import java.text.ParseException;
 import java.util.Date;
 
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.Utils;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 

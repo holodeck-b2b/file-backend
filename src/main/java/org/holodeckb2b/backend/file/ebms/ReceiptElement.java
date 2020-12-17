@@ -6,7 +6,7 @@ import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.MessageInfoElement;
 import org.holodeckb2b.ebms3.packaging.SignalMessageElement;
 import org.holodeckb2b.interfaces.messagemodel.IReceipt;

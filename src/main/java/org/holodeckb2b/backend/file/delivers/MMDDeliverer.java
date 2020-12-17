@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.SubmitOperation;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
@@ -63,7 +63,7 @@ public class MMDDeliverer extends AbstractFileDeliverer {
     
     @Override
     protected String writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
-        final Path mmdFilePath = Utils.createFileWithUniqueName(directory
+        final Path mmdFilePath = FileUtils.createFileWithUniqueName(directory
                                                             + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
                                                             + ".mmd" + TMP_EXTENSION);
         try {

@@ -19,7 +19,7 @@ package org.holodeckb2b.backend.file.mmd;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.holodeckb2b.common.util.Utils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;

@@ -29,8 +29,9 @@ import java.util.Random;
 
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.PartInfo;
-import org.holodeckb2b.common.util.Utils;
 import org.holodeckb2b.common.workerpool.AbstractWorkerTask;
+import org.holodeckb2b.commons.util.FileUtils;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
 import org.holodeckb2b.interfaces.submit.IMessageSubmitter;
@@ -127,7 +128,7 @@ public class SubmitOperation extends AbstractWorkerTask {
                 submitter.submitMessage(mmd, mmd.shouldDeleteFilesAfterSubmit());
                 log.info("User message from " + f.getName() + " succesfully submitted to Holodeck B2B");
                 // Change extension to reflect success
-                Files.move(Paths.get(tFileName), Utils.createFileWithUniqueName(baseFileName + ".accepted")
+                Files.move(Paths.get(tFileName), FileUtils.createFileWithUniqueName(baseFileName + ".accepted")
                            , StandardCopyOption.REPLACE_EXISTING);
 	        } catch (final Exception e) {
 	            // Something went wrong on reading the message meta data
@@ -135,7 +136,7 @@ public class SubmitOperation extends AbstractWorkerTask {
 	                        + ". Details: " + e.getMessage());
 	            // Change extension to reflect error and write error information
 	            try {
-	                final Path rejectFilePath = Utils.createFileWithUniqueName(baseFileName + ".rejected");
+	                final Path rejectFilePath = FileUtils.createFileWithUniqueName(baseFileName + ".rejected");
 	                Files.move(Paths.get(tFileName), rejectFilePath, StandardCopyOption.REPLACE_EXISTING);
 	                writeErrorFile(rejectFilePath, e);
 	            } catch (IOException ex) {
