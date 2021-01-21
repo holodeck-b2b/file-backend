@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ##### Unreleased
 ### Changed
 * Refactored code to use the generic utility classes from https://github.com/holodeck-b2b/generic-utils
+* Refactored code to adapt to changes in HB2B 5.1.0 Core 
 
 ### Fixed
 * Incorrect namespace URI of import in the MMD schema

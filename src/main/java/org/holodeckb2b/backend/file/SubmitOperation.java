@@ -29,7 +29,7 @@ import java.util.Random;
 
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.PartInfo;
-import org.holodeckb2b.common.workerpool.AbstractWorkerTask;
+import org.holodeckb2b.common.workers.AbstractWorkerTask;
 import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
