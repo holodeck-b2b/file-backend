@@ -201,7 +201,7 @@ If this element occurs multiple all instances MUST identify the same business pa
         </xs:sequence>
         <xs:attribute default="true" name="deleteFilesAfterSubmit" type="xs:boolean">
             <xs:annotation>
-                <xs:documentation>This attribute can be used to indicate whether the files containing the payload data should be removed by Holodeck B2B when the message is succesfully submitted. When not supplied or set to <i>true</i> the files are automatically removed on successful submission. If set to <i>false</i> the <i>Producer</i> application is responsible for deleting the payload file.</xs:documentation>
+                <xs:documentation>This attribute can be used to indicate whether the files containing the payload data should be removed by Holodeck B2B when the message is succesfully submitted. When set to <i>true</i> the files are automatically removed on successful submission. If set to <i>false</i> the <i>Producer</i> application is responsible for deleting the payload file. If the attribute is not supplied the global setting for removal of the payloads is used.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>

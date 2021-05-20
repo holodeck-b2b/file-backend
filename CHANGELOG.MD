@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.1.0
 ##### Unreleased
+### Added
+* Configuration setting to specify default behaviour for payload files removal [#7](https://github.com/holodeck-b2b/file-backend/issues/7)
+
 ### Changed
 * Refactored code to use the generic utility classes from https://github.com/holodeck-b2b/generic-utils
 * Refactored code to adapt to changes in HB2B 5.1.0 Core 

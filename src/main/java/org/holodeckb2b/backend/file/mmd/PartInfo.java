@@ -68,7 +68,9 @@ public class PartInfo implements IPayload {
     /**
      * Default constructor
      */
-    public PartInfo() {}
+    public PartInfo() {
+    	properties = new ArrayList<>();
+    }
 
     /**
      * Creates a new <code>PartInfo</code> object based on the given data.

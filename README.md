@@ -12,8 +12,11 @@ Normally there is no need to install this extension manually as it is already in
 
 ## Configuration
 ### Submit
-The Submit operation is implemented as a Holodeck B2B "worker" which is configured in the `workers.xml` configuration file. The worker's implementation class is `org.holodeckb2b.backend.file.SubmitOperation` and takes one parameter "watchPath" which points to the directory where the back-end writes the meta-data files. It is recommended to specify an absolute path, but in case a relative path is provided it is evaluated with the Holodeck B2B home directory as base path.  
+The Submit operation is implemented as a Holodeck B2B "worker" which is configured in the `workers.xml` configuration file. The worker's implementation class is `org.holodeckb2b.backend.file.SubmitOperation` and has two parameters:
+1. _watchPath_ : points to the directory where the back-end writes the meta-data files. It is recommended to specify an absolute path, but in case a relative path is provided it is evaluated with the Holodeck B2B home directory as base path.  
 The default distribution package already has this worker configured for submissions to the `«HB2B_HOME»/data/msg_out` directory. If required multiple workers, watching different directories can be configured. 
+2. _deleteFilesAfterSubmit_ : should be used to define the default behaviour whether the payload files should be removed after successful submission to
+the Holodeck B2B Core. Boolean value. If the parameter is not set the default is to remove payloads after submission. 
 
 ### Notify and Deliver
 Like all Holodeck B2B _delivery methods_ the notify and deliver operations are configured in the P-Mode that governs the message exchanges. There are several P-Mode parameters where a _delivery method_ can be configured, the most common being the "default" one on a leg which will be used for all received messages on that leg if no specific delivery method has been defined for a specific signal message type. See the P-Mode documentation for more details where delivery methods can be configured. 

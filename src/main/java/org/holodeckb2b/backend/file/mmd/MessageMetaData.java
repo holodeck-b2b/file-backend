@@ -239,11 +239,11 @@ public class MessageMetaData implements IUserMessage {
      * Core.
      * <p>NOTE:  this class only enables exchange of the indicator, it is upto submitter implementations to use it!
      *
-     * @return <code>true</code> when the files should be deleted, <code>false</code> if not.
+     * @return  <code>true</code> when the files should be deleted, <code>false</code> if not.
      * @since 2.0-rc2
      */
-    public boolean shouldDeleteFilesAfterSubmit() {
-        return (payloadInfo != null ? payloadInfo.shouldDeleteFilesAfterSubmit() : false);
+    public Boolean shouldDeleteFilesAfterSubmit() {
+        return (payloadInfo != null ? payloadInfo.shouldDeleteFilesAfterSubmit() : null);
     }
 
     /**
@@ -251,13 +251,13 @@ public class MessageMetaData implements IUserMessage {
      * Core. Setting the indicator is only useful for meta-data objects that are used for submission with a submitter
      * that supports this indicator.
      *
-     * @param delete The new value for the indicator
+     * @param delete The new value for the indicator, maybe <code>null</code> if the default setting should be used.
      */
-    public void setDeleteFilesAfterSubmit(final boolean delete) {
-        if (this.payloadInfo == null)
-            this.payloadInfo = new PayloadInfo();
-
-        this.payloadInfo.setDeleteFilesAfterSubmit(delete);
+    public void setDeleteFilesAfterSubmit(final Boolean delete) {
+    	if (delete != null && this.payloadInfo == null)
+            this.payloadInfo = new PayloadInfo();    	
+    	if (payloadInfo != null)
+    		this.payloadInfo.setDeleteFilesAfterSubmit(delete);
     }
 
     @Override

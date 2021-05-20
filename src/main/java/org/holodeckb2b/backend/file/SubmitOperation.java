@@ -44,6 +44,10 @@ import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
  * been submitted, the extension will be changed to <b>accepted</b>. When an error occurs on submit the extension will
  * be changed to <b>rejected</b> and information on the error will be written to a file with the same name but
  * with extension <b>err</b>.
+ * <p>By default the payload files are removed after successful submission to the Core. This behaviour can be changed 
+ * per submission by setting the <code>//PayloadInfo/@deleteFilesAfterSubmit</code> attribute in the MMD or globally
+ * by setting the _deleteFilesAfterSubmit_ parameter of the worker. If a value is supplied in the MMD it takes 
+ * precedence over the global value configured in the worker. 
  *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
@@ -51,21 +55,19 @@ public class SubmitOperation extends AbstractWorkerTask {
     /**
      * The path to the directory to watch for MMD files
      */
-    private String watchPath;
+    protected String watchPath;
+    /**
+     * Default setting whether the payload file should be removed upon successful submission
+     */
+    protected boolean removePayloadsDefault;    
     /**
      * Random numbers are used to create unique temp file names
      */
-    private Random randomizer = new Random();
+    protected Random randomizer = new Random();
 
     /**
-     * Initializes the worker. Overrides parent method to ensure that the watched
-     * extension is set fixed to "mmd".
-     * <p>Also gets the {@see IMessageSubmitterFactory} from the Holodeck B2B core
-     * to create {@see IMessageSubmitter}s for the submission of the user messages
-     * to Holodeck B2B.
-     *
-     * @param parameters
-     * @throws TaskConfigurationException
+     * Initialises the worker. This worker has just one parameter, <i>watchPath</i>, which must point to the directory
+     * that contains the MMD files.  
      */
     @Override
     public void setParameters(final Map<String, ?> parameters) throws TaskConfigurationException {
@@ -85,6 +87,11 @@ public class SubmitOperation extends AbstractWorkerTask {
             log.error("The specified directory to watch for submission [" + watchPath + "] is not accessible to HB2B");
             throw new TaskConfigurationException("Invalid path specified!");
         }
+        
+        final String globalDelete = (String) parameters.get("deleteFilesAfterSubmit");
+        removePayloadsDefault = globalDelete == null || Utils.isTrue(globalDelete);
+        log.info("Configured submitter:\n\tWatched directory = {}\n\tRemove payloads = {}", watchPath,
+        			removePayloadsDefault); 
     }
 
     @Override
@@ -125,7 +132,8 @@ public class SubmitOperation extends AbstractWorkerTask {
                 // Convert relative paths in payload references to absolute ones to prevent file not found errors
                 convertPayloadPaths(mmd, f);
                 final IMessageSubmitter   submitter = HolodeckB2BCoreInterface.getMessageSubmitter();
-                submitter.submitMessage(mmd, mmd.shouldDeleteFilesAfterSubmit());
+                submitter.submitMessage(mmd, mmd.shouldDeleteFilesAfterSubmit() != null ?
+                											mmd.shouldDeleteFilesAfterSubmit() : removePayloadsDefault);
                 log.info("User message from " + f.getName() + " succesfully submitted to Holodeck B2B");
                 // Change extension to reflect success
                 Files.move(Paths.get(tFileName), FileUtils.createFileWithUniqueName(baseFileName + ".accepted")

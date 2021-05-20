@@ -114,9 +114,9 @@ class PayloadInfo {
      * Sets the indicator whether the payload files should be deleted after successful submission to the Holodeck B2B
      * Core.
      *
-     * @param delete The new value for the indicator
+     * @param delete The new value for the indicator, maybe <code>null</code> if the default setting should be used.
      */
-    void setDeleteFilesAfterSubmit(final boolean delete) {
+    void setDeleteFilesAfterSubmit(final Boolean delete) {
         this.deleteFilesAfterSubmit = delete;
     }
 
@@ -124,9 +124,9 @@ class PayloadInfo {
      * Gets the indicator whether the payload files should be deleted after successful submission to the Holodeck B2B
      * Core.
      *
-     * @return <code>true</code> when the files should be deleted, <code>false</code> if not.
+     * @return	the value of the <code>deleteFilesAfterSubmit</code> attribute
      */
-    boolean shouldDeleteFilesAfterSubmit() {
-        return (this.deleteFilesAfterSubmit != null ? this.deleteFilesAfterSubmit.booleanValue() : true);
+    Boolean shouldDeleteFilesAfterSubmit() {
+        return this.deleteFilesAfterSubmit;
     }
 }
