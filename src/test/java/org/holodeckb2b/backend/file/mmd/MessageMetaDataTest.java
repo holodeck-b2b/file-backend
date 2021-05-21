@@ -225,7 +225,7 @@ public class MessageMetaDataTest {
             assertEquals("H8MQXJ", mmd.getMessageId());
             assertEquals("UGA08vL5hsdNfC-sGoV2RD", mmd.getRefToMessageId());
 
-            assertTrue(mmd.shouldDeleteFilesAfterSubmit());
+            assertNull(mmd.shouldDeleteFilesAfterSubmit());
         } catch (final Exception ex) {
             ex.printStackTrace();
             fail();
