@@ -21,7 +21,7 @@ import org.holodeckb2b.interfaces.messagemodel.IReceipt;
 public class ReceiptElement extends org.holodeckb2b.ebms3.packaging.ReceiptElement {
     protected static final QName  Q_RECEIPT_CHILD = new QName(
     											"http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild",
-    											"ReceiptChild");
+    											"ReceiptChild", "hb2bnot");
     
     /**
      * Creates a new <code>eb:SignalMessage</code> for a <i>Receipt Signal</i> message unit.
