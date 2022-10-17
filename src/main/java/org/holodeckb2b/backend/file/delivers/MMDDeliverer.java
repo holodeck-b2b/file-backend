@@ -25,15 +25,14 @@ import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.SubmitOperation;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.commons.util.FileUtils;
-import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
 
 /**
- * Is an {@link IMessageDeliverer} implementation that delivers <b>ONLY user message units</b> to the business
- * application by writing the user message info to a MMD file and the payload contents to separate files in the same
- * directory. The payload files are referred to through the <code>location</code> attribute of the <code>PartInfo</code>
- * element in the MMD document.
+ * Is the file based delivery implementation that delivers <b>ONLY user message units</b> to the business application by 
+ * writing the user message info to a MMD file and the payload contents to separate files in the same directory. The 
+ * payload files are referred to through the <code>location</code> attribute of the <code>PartInfo</code> element in the 
+ * MMD document.
  * <p>The XML format of the message meta data (MMD) document is the same as for the default file based message submitter
  * ({@link SubmitOperation}) and defined in the <code>http://holodeck-b2b.org/schemas/2014/06/mmd</code> xml schema
  * definition.

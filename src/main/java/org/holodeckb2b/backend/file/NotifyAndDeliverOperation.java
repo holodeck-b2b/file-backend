@@ -22,26 +22,30 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.holodeckb2b.backend.file.delivers.AbstractFileDeliverer;
 import org.holodeckb2b.backend.file.delivers.EbmsFileDeliverer;
 import org.holodeckb2b.backend.file.delivers.MMDDeliverer;
 import org.holodeckb2b.backend.file.delivers.SingleXMLDeliverer;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
-import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
-import org.holodeckb2b.interfaces.delivery.IMessageDelivererFactory;
+import org.holodeckb2b.interfaces.delivery.IDeliveryCallback;
+import org.holodeckb2b.interfaces.delivery.IDeliveryMethod;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
+import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
 
 /**
- * Is the {@link IMessageDelivererFactory} implementation for the file based delivery method. This delivery method 
- * writes the meta-data and payloads (for <i>User Messages</i>) to one or more files. Three formats are included in this 
- * implementation, each implemented by a separate {@link IMessageDeliverer} implementation:<dl>
+ * Is a file based {@link IDeliveryMethod} implementation. This delivery method writes the meta-data and payloads (for 
+ * <i>User Messages</i>) to one or more files. Three formats are included in this implementation, each implemented by a 
+ * separate class:<dl>
  * <dt><i>1 - "mmd"</i></dt><dd>writes the message meta as included in the ebMS header and payloads into separate files.
  * 			 	The same MMD format as used by submission operation of this back end (as specified by the
  *              XML schema definition with the namespace <code>http://holodeck-b2b.org/schemas/2014/06/mmd</code>.
  *              <br><b>NOTE :</b> This format can only deliver <i>User Message</i> message units!</dd>
- *  <dt><i>2 - "ebms"</i></dt><dd>also writes the message meta data and payloads to separate files but uses the same
+ * <dt><i>2 - "ebms"</i></dt><dd>also writes the message meta data and payloads to separate files but uses the same
  *              format as the ebMS header for the meta data file. To reference the payload file location a specific
  *              <i>Part Property</i> is included in the meta-data of each payload.</dd>
- *  <dt><i>3 - "single_xml"</i></dt><dd>writes all data of a message unit, including the payloads of a <i>User Message
+ * <dt><i>3 - "single_xml"</i></dt><dd>writes all data of a message unit, including the payloads of a <i>User Message
  *              </i> message unit to one XML file. Because the payloads can be binary data they will be included
  *              <i>base64</i> encoded. This format is defined by the XML schema definition with namespace <code>
  *              http://holodeck-b2b.org/schemas/2018/01/delivery/single_xml</code></dd>
@@ -51,44 +55,39 @@ import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
  * schema with namespace <code>http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild</code> for the
  * definition of the element that is included as Receipt content.
  * <p>Which format is requested must be specified when creating the factory using the "<i>format</i>" parameter. If not
- * specified the <i>"ebms"</i> format will be used as default.<br>
- * Furthermore the directory where to write the files MUST be specified using the "<i>deliveryDirectoy</i>" setting.
+ * specified the <i>"ebms"</i> format will be used as default. Furthermore the directory where to write the files MUST 
+ * be specified using the "<i>deliveryDirectoy</i>" setting.
+ * <p>This delivery method supports the asynchronous delivery of the messages. 
  * 
- * <p>This back-end was originally included in the Holodeck Core project as the default back-end integration. But since
- * it is a non essential part it has been split into a separate extension.
+ * <p>This back-end was originally included in the Holodeck B2B Core project as the default back-end integration. But 
+ * since it is a non essential part it has been split into a separate extension.
  *   
  * @author Sander Fieten (sander at holodeck-b2b.org)
  * @see MMDDeliverer
  * @see EbmsFileDeliverer
  * @see SingleXMLDeliverer
  */
-public class NotifyAndDeliverOperation implements IMessageDelivererFactory {
+public class NotifyAndDeliverOperation implements IDeliveryMethod {
+	private static final Logger   log = LogManager.getLogger(NotifyAndDeliverOperation.class);
 
-    /**
+	/**
      * The name of the parameter for the delivery directory
      */
     public static final String DELIVERY_DIR_PARAM = "deliveryDirectory";
-
     /**
      * The name of the parameter for the format
      */
     public static final String FORMAT_PARAM = "format";
 
     /**
-     * Enumeration for the possible formats
-     */
-    enum FileFormat { MMD, EBMS, SINGLE_XML }
-
-    /**
      * The delivery directory path
      */
     protected String deliveryDir = null;
-
     /**
-     * The XML format to use for the message info
+     * The actual implementation of the delivery
      */
-    protected FileFormat miFormat = FileFormat.EBMS;
-
+    protected AbstractFileDeliverer		deliverer;
+  
     /**
      * Initializes the factory, ensures that a valid delivery directory is specified.
      *
@@ -111,47 +110,55 @@ public class NotifyAndDeliverOperation implements IMessageDelivererFactory {
                                                                         + " does not exits or is not writable!");
         // Ensure directory path ends with separator
         deliveryDir = (deliveryDir.endsWith(FileSystems.getDefault().getSeparator()) ? deliveryDir
-                              : deliveryDir + FileSystems.getDefault().getSeparator());
-
-        // Check if XML format is specified
-        String xmlFormat = null;
-        try {
-             xmlFormat = (String) settings.get(FORMAT_PARAM);
-        } catch (final ClassCastException ex) {
-            // Ignore error, use default
+                              : deliveryDir + FileSystems.getDefault().getSeparator());        
+        if (!checkDirectory()) {
+	        // Directory is not valid
+        	log.error("The specified directory ({}) is not accessible", deliveryDir);
+	        throw new MessageDeliveryException("Specified directory [" + deliveryDir 
+	        									+ " does not exits or is not writable!");
         }
-
-        if ("mmd".equalsIgnoreCase(xmlFormat))
-            miFormat = FileFormat.MMD;
-        else if ("single_xml".equalsIgnoreCase(xmlFormat))
-            miFormat = FileFormat.SINGLE_XML;
-        else
-            miFormat = FileFormat.EBMS;
+        
+        // Check if XML format is specified
+        String format = (String) settings.get(FORMAT_PARAM);
+        switch (format) {
+            case "single_xml" :
+                deliverer = new SingleXMLDeliverer(deliveryDir);
+            case "mmd" :
+                deliverer = new MMDDeliverer(deliveryDir);
+            case "ebms" :
+            default:
+            	format = "ebms";
+                deliverer = new EbmsFileDeliverer(deliveryDir);
+        }        
+        log.info("Initialised file delivery method using {} format to {}", format, deliveryDir);        		
     }
 
-    /**
-     * Create a new deliverer for message delivery.
-     *
-     * @return  The new deliverer, the type depends on the selected XML format
-     * @throws MessageDeliveryException When the specified directory has become invalid
-     */
     @Override
-    public IMessageDeliverer createMessageDeliverer() throws MessageDeliveryException {
-        if (checkDirectory())
-            switch (miFormat) {
-                case SINGLE_XML :
-                    return new SingleXMLDeliverer(deliveryDir);
-                case MMD :
-                    return new MMDDeliverer(deliveryDir);
-                default:
-                    return new EbmsFileDeliverer(deliveryDir);
-            }
-        else
-            // Directory is not valid anymore
-            throw new MessageDeliveryException("Specified directory [" + deliveryDir
-                                                                        + " does not exits or is not writable!");
+    public boolean supportsAsyncDelivery() {
+    	return true;
     }
-
+    
+    @Override
+    public void deliver(IMessageUnit rcvdMsgUnit) throws MessageDeliveryException {
+    	deliverer.deliver(rcvdMsgUnit);
+    }
+    
+    @Override
+    public void deliver(IMessageUnit rcvdMsgUnit, IDeliveryCallback callback) throws MessageDeliveryException {
+    	if (!checkDirectory()) {
+	        // Directory is not valid
+        	log.error("The specified directory ({}) is not accessible", deliveryDir);
+	        throw new MessageDeliveryException("Specified directory [" + deliveryDir 
+	        									+ " does not exits or is not writable!");    		
+    	}
+    	try {
+    		deliver(rcvdMsgUnit);
+    		callback.success();
+    	} catch (MessageDeliveryException deliveryFailure) {
+    		callback.failed(deliveryFailure);
+    	}
+    }
+    
     /**
      * Checks if the directory is still valid, i.e. exists and is writable.
      *

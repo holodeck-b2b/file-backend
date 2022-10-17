@@ -38,12 +38,11 @@ import org.holodeckb2b.backend.file.mmd.Property;
 import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.UserMessageElement;
-import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.general.EbMSConstants;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
 
 /**
- * Is the {@link IMessageDeliverer} that implements the <i>"single_xml"</i> format of the file delivery method.
+ * Implements the file based delivery that uses the <i>"single_xml"</i> format.
  * <p>It delivers the message unit to the business application by writing all information of the message unit info,
  * <b>including</b> the payload data of a <i>User Message</i> message unit to one XML file. The format of the XML
  * document is defined by the XML schema <code>http://holodeck-b2b.org/schemas/2018/01/delivery/single_xml</code>.

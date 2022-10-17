@@ -26,11 +26,11 @@ import java.util.Collection;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
 import org.holodeckb2b.backend.file.mmd.PartInfo;
 import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
-import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
@@ -38,30 +38,29 @@ import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
 import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
 
 /**
- * Is an abstract {@link IMessageDeliverer} implementation that implements the delivery of user messages by writing the
- * the message unit info and payload contents to file. The format of the message meta data file has to be implemented in
- * the subclass.
- * <p>This deliverer also does not implement the delivery of signal messages. If signals have to be delivered to the
- * business application this should also be implemented in the subclass by overriding {@link #deliverSignalMessage(org.holodeckb2b.common.messagemodel.IMessageUnit)}
+ * Is the base class for the implementation of the file based delivery methods. It contains the functionality to move
+ * the payloads of a User Message to the target directory and adapt the meta-data accordingly. The writing of the 
+ * message meta data file has to be implemented in the subclass. This also includes writing the meta-data of signal 
+ * messages to file. 
  *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
-public abstract class AbstractFileDeliverer implements IMessageDeliverer {
+public abstract class AbstractFileDeliverer {
 	/**
 	 * Extension to use when writing the files to disk. This extension is used to prevent the back-end from picking up
 	 * files that are still being written.
 	 */
 	protected static final String TMP_EXTENSION = ".processing"; 
 			
-    /**
+	/**
+	 * Logger.
+	 */
+	protected static final Logger   log = LogManager.getLogger(NotifyAndDeliverOperation.class);
+
+	/**
      * The where the files should be stored
      */
     protected String  directory = null;
-
-    /**
-     * Logger
-     */
-    protected Logger   log = LogManager.getLogger(this.getClass());
 
     /**
      * Constructs a new deliverer which will write the files to the given directory.
@@ -71,8 +70,7 @@ public abstract class AbstractFileDeliverer implements IMessageDeliverer {
     public AbstractFileDeliverer(final String dir) {
         this.directory = dir;
     }
-
-    @Override
+    
     public void deliver(final IMessageUnit rcvdMsgUnit) throws MessageDeliveryException {
         if (rcvdMsgUnit instanceof IUserMessage)
             deliverUserMessage((IUserMessage) rcvdMsgUnit);

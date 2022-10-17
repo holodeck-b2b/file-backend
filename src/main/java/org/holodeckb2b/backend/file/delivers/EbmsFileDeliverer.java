@@ -36,7 +36,6 @@ import org.holodeckb2b.backend.file.mmd.Property;
 import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.ebms3.packaging.ErrorSignalElement;
-import org.holodeckb2b.interfaces.delivery.IMessageDeliverer;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.general.EbMSConstants;
 import org.holodeckb2b.interfaces.messagemodel.IErrorMessage;
@@ -45,7 +44,7 @@ import org.holodeckb2b.interfaces.messagemodel.IReceipt;
 import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
 
 /**
- * Is the {@link IMessageDeliverer} that implements the <i>"ebms"</i> format of the file delivery method.
+ * Implements the <i>"ebms"</i> format of the file delivery method.
  * <p>It delivers the message unit to the business application by writing the message unit info to a file using the same
  * format as in the ebMS messaging header as defined in the xml schema definition
  * <code>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/</code>.
@@ -168,7 +167,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
         log.trace("Create delivery XML document and add message info");
         // Add the information on the user message to the container
         final OMElement  container = createContainerElement();
-        final OMElement  usrMsgElement = UserMessageElement.createElement(container, mmd);
+        UserMessageElement.createElement(container, mmd);
         log.trace("Information complete, write XML document to file");        
         return writeXMLDocument(container, mmd.getMessageId());
     }

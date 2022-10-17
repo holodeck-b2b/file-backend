@@ -28,7 +28,7 @@ import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.holodeckb2b.common.testhelpers.HolodeckB2BTestCore;
-import org.holodeckb2b.common.testhelpers.Submitter;
+import org.holodeckb2b.common.testhelpers.TestMessageSubmitter;
 import org.holodeckb2b.common.testhelpers.TestUtils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
@@ -97,7 +97,7 @@ public class SubmitOperationTest {
         
         worker.run();
 
-        assertEquals(numOfMMDs, ((Submitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
+        assertEquals(numOfMMDs, ((TestMessageSubmitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
     }
     
     @Test
@@ -128,7 +128,7 @@ public class SubmitOperationTest {
 			e.printStackTrace();
 			fail("Not all workers finished!");
 		}
-        assertEquals(numOfMMDs, ((Submitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
+        assertEquals(numOfMMDs, ((TestMessageSubmitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
     }
     
 }
