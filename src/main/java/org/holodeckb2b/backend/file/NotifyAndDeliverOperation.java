@@ -35,8 +35,8 @@ import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
 
 /**
- * Is a file based {@link IDeliveryMethod} implementation. This delivery method writes the meta-data and payloads (for 
- * <i>User Messages</i>) to one or more files. Three formats are included in this implementation, each implemented by a 
+ * Is a file based {@link IDeliveryMethod} implementation. This delivery method writes the meta-data and payloads (for
+ * <i>User Messages</i>) to one or more files. Three formats are included in this implementation, each implemented by a
  * separate class:<dl>
  * <dt><i>1 - "mmd"</i></dt><dd>writes the message meta as included in the ebMS header and payloads into separate files.
  * 			 	The same MMD format as used by submission operation of this back end (as specified by the
@@ -55,13 +55,13 @@ import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
  * schema with namespace <code>http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild</code> for the
  * definition of the element that is included as Receipt content.
  * <p>Which format is requested must be specified when creating the factory using the "<i>format</i>" parameter. If not
- * specified the <i>"ebms"</i> format will be used as default. Furthermore the directory where to write the files MUST 
+ * specified the <i>"ebms"</i> format will be used as default. Furthermore the directory where to write the files MUST
  * be specified using the "<i>deliveryDirectoy</i>" setting.
- * <p>This delivery method supports the asynchronous delivery of the messages. 
- * 
- * <p>This back-end was originally included in the Holodeck B2B Core project as the default back-end integration. But 
+ * <p>This delivery method supports the asynchronous delivery of the messages.
+ *
+ * <p>This back-end was originally included in the Holodeck B2B Core project as the default back-end integration. But
  * since it is a non essential part it has been split into a separate extension.
- *   
+ *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  * @see MMDDeliverer
  * @see EbmsFileDeliverer
@@ -87,7 +87,7 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
      * The actual implementation of the delivery
      */
     protected AbstractFileDeliverer		deliverer;
-  
+
     /**
      * Initializes the factory, ensures that a valid delivery directory is specified.
      *
@@ -110,14 +110,14 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
                                                                         + " does not exits or is not writable!");
         // Ensure directory path ends with separator
         deliveryDir = (deliveryDir.endsWith(FileSystems.getDefault().getSeparator()) ? deliveryDir
-                              : deliveryDir + FileSystems.getDefault().getSeparator());        
+                              : deliveryDir + FileSystems.getDefault().getSeparator());
         if (!checkDirectory()) {
 	        // Directory is not valid
         	log.error("The specified directory ({}) is not accessible", deliveryDir);
-	        throw new MessageDeliveryException("Specified directory [" + deliveryDir 
+	        throw new MessageDeliveryException("Specified directory [" + deliveryDir
 	        									+ " does not exits or is not writable!");
         }
-        
+
         // Check if XML format is specified
         String format = (String) settings.get(FORMAT_PARAM);
         switch (format) {
@@ -129,36 +129,38 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
             default:
             	format = "ebms";
                 deliverer = new EbmsFileDeliverer(deliveryDir);
-        }        
-        log.info("Initialised file delivery method using {} format to {}", format, deliveryDir);        		
+        }
+        log.info("Initialised file delivery method using {} format to {}", format, deliveryDir);
     }
 
     @Override
     public boolean supportsAsyncDelivery() {
     	return true;
     }
-    
+
     @Override
     public void deliver(IMessageUnit rcvdMsgUnit) throws MessageDeliveryException {
     	deliverer.deliver(rcvdMsgUnit);
     }
-    
+
     @Override
     public void deliver(IMessageUnit rcvdMsgUnit, IDeliveryCallback callback) throws MessageDeliveryException {
     	if (!checkDirectory()) {
 	        // Directory is not valid
         	log.error("The specified directory ({}) is not accessible", deliveryDir);
-	        throw new MessageDeliveryException("Specified directory [" + deliveryDir 
-	        									+ " does not exits or is not writable!");    		
+	        throw new MessageDeliveryException("Specified directory [" + deliveryDir
+	        									+ " does not exits or is not writable!");
     	}
-    	try {
-    		deliver(rcvdMsgUnit);
-    		callback.success();
-    	} catch (MessageDeliveryException deliveryFailure) {
-    		callback.failed(deliveryFailure);
-    	}
+    	new Thread(() -> {
+	    	try {
+	    		deliver(rcvdMsgUnit);
+	    		callback.success();
+	    	} catch (MessageDeliveryException deliveryFailure) {
+	    		callback.failed(deliveryFailure);
+	    	}
+    	}).start();
     }
-    
+
     /**
      * Checks if the directory is still valid, i.e. exists and is writable.
      *
@@ -166,17 +168,17 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
      */
     private boolean checkDirectory() {
         try {
-            Path path = Paths.get(deliveryDir);            
+            Path path = Paths.get(deliveryDir);
             if (!path.isAbsolute())
             	path = HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome().resolve(deliveryDir);
-            																								
+
             // Test if given path exists and is a directory
             if (!Files.isDirectory(path) || !Files.isWritable(path))
                 // Not a writable directory!
                 return false;
 
             deliveryDir = path.toString() + "/";
-            
+
     		return true;
 
         } catch (final Exception ex) {
