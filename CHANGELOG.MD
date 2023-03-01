@@ -2,8 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.2.0-SNAPSHOT
+## 1.2.0
 ##### 
+### Added
+* Support for asynchronous delivery 
+
 ### Changed
 * Refactored code to adapt to changes in HB2B 6.0.0
 
