@@ -92,7 +92,7 @@ public class MessageMetaData implements IUserMessage {
         setRefToMessageId(msgData.getRefToMessageId());
         setSender(msgData.getSender());
         setReceiver(msgData.getReceiver());
-        setCollaborationInfo(msgData.getCollaborationInfo());
+        setCollaborationInfo(msgData.getCollaborationInfo(), msgData.getPModeId());
         setMessageProperties(msgData.getMessageProperties());
         setPayloads(msgData.getPayloads());
     }
@@ -198,11 +198,14 @@ public class MessageMetaData implements IUserMessage {
         return collabInfo;
     }
 
-    public void setCollaborationInfo(final ICollaborationInfo ci) {
-        if (ci != null)
-            this.collabInfo = new CollaborationInfo(ci);
-        else
-            this.collabInfo = null;
+    public void setCollaborationInfo(final ICollaborationInfo ci, final String pmodeId) {
+    	this.collabInfo = ci != null ? new CollaborationInfo(ci) : new CollaborationInfo();
+    	AgreementReference r = (AgreementReference) this.collabInfo.getAgreement();
+    	if (r == null) {
+    		r = new AgreementReference();
+    		this.collabInfo.setAgreement(r);
+    	}
+    	r.setPModeId(pmodeId);    	 
     }
 
     @Override

@@ -256,6 +256,7 @@ public class MessageMetaDataTest {
     public void test_CreateFromObject() {
         final UserMessage um = new UserMessage();
 
+        um.setPModeId(T_UM1_PMODEID);
         um.setMPC(T_UM1_MPC);
         um.setMessageId(T_UM1_MESSAGEID);
         um.setRefToMessageId(T_UM1_REFTOMSGID);
@@ -297,6 +298,7 @@ public class MessageMetaDataTest {
     public void test_WriteToFile() {
         final UserMessage um = new UserMessage();
 
+        um.setPModeId(T_UM1_PMODEID);
         um.setMPC(T_UM1_MPC);
         um.setMessageId(T_UM1_MESSAGEID);
         um.setRefToMessageId(T_UM1_REFTOMSGID);
