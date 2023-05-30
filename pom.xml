@@ -5,13 +5,13 @@
 
 	<groupId>org.holodeckb2b.extensions</groupId>
 	<artifactId>file-backend</artifactId>
-	<version>1.2.0</version>
+	<version>1.3.0</version>
 	<packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<holodeckb2b.version>6.0.0</holodeckb2b.version>		
+		<holodeckb2b.version>6.0.1</holodeckb2b.version>		
 	</properties>
 	<name>Holodeck B2B - File based back end</name>
 	<url>http://www.holodeck-b2b.org/</url>

@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.0
+##### 2023-05-30
+### Added
+* PMode.id included on delivery of User Messages (implements #9)
+
+### Fixed
+* Requested delivery format ignored (fixes #10)
+
 ## 1.2.0
 ##### 2023-03-08
 ### Added
