@@ -122,9 +122,9 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
         String format = (String) settings.get(FORMAT_PARAM);
         switch (format) {
             case "single_xml" :
-                deliverer = new SingleXMLDeliverer(deliveryDir);
+                deliverer = new SingleXMLDeliverer(deliveryDir); break;
             case "mmd" :
-                deliverer = new MMDDeliverer(deliveryDir);
+                deliverer = new MMDDeliverer(deliveryDir); break;
             case "ebms" :
             default:
             	format = "ebms";
