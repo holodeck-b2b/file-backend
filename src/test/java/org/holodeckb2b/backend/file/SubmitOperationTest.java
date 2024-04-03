@@ -16,25 +16,29 @@
  */
 package org.holodeckb2b.backend.file;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.apache.commons.io.FileUtils;
 import org.holodeckb2b.common.testhelpers.HolodeckB2BTestCore;
 import org.holodeckb2b.common.testhelpers.TestMessageSubmitter;
-import org.holodeckb2b.common.testhelpers.TestUtils;
+import org.holodeckb2b.commons.testing.TestUtils;
+import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
-import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 
 /**
  *
@@ -42,86 +46,83 @@ import org.junit.jupiter.api.Test;
  */
 public class SubmitOperationTest {
 
-    private static final Path basePath = TestUtils.getTestBasePath().resolve("submission");    
-    
-    private int numOfMMDs;
-    
-    @BeforeEach
-    public void setUp() throws Exception {
-    	HolodeckB2BCoreInterface.setImplementation(new HolodeckB2BTestCore(basePath.toString()));
+	private static HolodeckB2BTestCore testCore;
+    private static final Path testDir = TestUtils.getTestResource("submissions");
 
-        File submitDir = basePath.toFile();
-        if (submitDir.exists())
-        	FileUtils.deleteDirectory(submitDir);        
-        FileUtils.forceMkdir(submitDir);
-        
-        numOfMMDs = new Random().nextInt(100);
-        for(int i = 0; i < numOfMMDs; i++) { 
-        	try (FileWriter fw = new FileWriter(basePath.resolve("test_submission_" + i + ".mmd").toFile())) {
-        		fw.write(
-	    				"<MessageMetaData xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" + 
-	    				" xmlns=\"http://holodeck-b2b.org/schemas/2014/06/mmd\">" + 
-	    				"    <CollaborationInfo>" + 
-	    				"        <AgreementRef pmode=\"ex-pm-push\"/>" + 
-	    				"        <ConversationId>org:holodeckb2b:test:conversation</ConversationId>" + 
-	    				"    </CollaborationInfo>" + 
-	    				"    <PayloadInfo>" + 
-	    				"        <PartInfo containment=\"attachment\" mimeType=\"image/jpeg\"" +
-	    				"					location=\"dandelion.jpg\"/>" + 
-	    				"    </PayloadInfo>" + 
-	    				"</MessageMetaData>");
-        	} catch (IOException ex) {
-        		fail("Could not create the MMD files for testing");
-        	}        	
-        }
+    @BeforeAll
+    static void prepareTestDir() throws IOException {
+    	if (!Files.exists(testDir))
+    		Files.createDirectory(testDir);
+
+    	testCore = new HolodeckB2BTestCore(testDir);
+    	HolodeckB2BCoreInterface.setImplementation(testCore);
     }
 
-    @AfterEach
-    public void tearDown() throws Exception {
-    	File submitDir = basePath.toFile();
-        if (submitDir.exists())
-        	FileUtils.deleteDirectory(submitDir);                
+    @AfterAll
+    static void removeTestDit() throws IOException {
+    	FileUtils.cleanDirectory(testDir);
+    	Files.deleteIfExists(testDir);
+    }
+
+    @BeforeEach
+    public void prepareTest() throws IOException {
+    	FileUtils.cleanDirectory(testDir);
+    	testCore.cleanStorage();
+    	((TestMessageSubmitter) testCore.getMessageSubmitter()).clear();
+    	Files.copy(TestUtils.getTestResource("payloads/dandelion.jpg"), testDir.resolve("dandelion.jpg"));
     }
 
     @Test
-    public void testSingleWorker() {
+    public void testKeepPayloads() {
+    	createMMD(1, false);
+
         SubmitOperation worker = new SubmitOperation();
 
         HashMap<String, Object> params = new HashMap<>();
-        params.put("watchPath", basePath.toString());
-        try {
-            worker.setParameters(params);
-        } catch (TaskConfigurationException e) {
-            fail(e.getMessage());
-        }
-        
-        worker.run();
+        params.put("watchPath", testDir.toString());
 
-        assertEquals(numOfMMDs, ((TestMessageSubmitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
+        assertDoesNotThrow(() -> worker.setParameters(params));
+        assertDoesNotThrow(() -> worker.run());
+
+        assertEquals(1, ((TestMessageSubmitter) testCore.getMessageSubmitter()).getAllSubmitted().size());
+        assertTrue(Files.exists(testDir.resolve("dandelion.jpg")));
     }
-    
+
+    @Test
+    public void testRemovePayloads() {
+    	createMMD(1, true);
+
+    	SubmitOperation worker = new SubmitOperation();
+
+    	HashMap<String, Object> params = new HashMap<>();
+    	params.put("watchPath", testDir.toString());
+
+    	assertDoesNotThrow(() -> worker.setParameters(params));
+    	assertDoesNotThrow(() -> worker.run());
+
+    	assertEquals(1, ((TestMessageSubmitter) testCore.getMessageSubmitter()).getAllSubmitted().size());
+    	assertFalse(Files.exists(testDir.resolve("dandelion.jpg")));
+    }
+
     @Test
     public void testMultipleWorkers() {
-        
-    	final int numOfWorkers = Math.max(1, new Random().nextInt(5));    	
-    	
+    	final int numOfMMDs = new Random().nextInt(100);
+    	createMMD(numOfMMDs, false);
+
+    	final int numOfWorkers = Math.max(1, new Random().nextInt(5));
         HashMap<String, Object> params = new HashMap<>();
-        params.put("watchPath", basePath.toString());
-        
+        params.put("watchPath", testDir.toString());
+
         final Thread[] workers = new Thread[numOfWorkers];
-        try {
-            for (int i = 0; i < numOfWorkers; i++) {
-            	SubmitOperation worker = new SubmitOperation();
-            	worker.setParameters(params);
-            	workers[i] =  new Thread(worker);
-            }        	            
-        } catch (TaskConfigurationException e) {
-            fail(e.getMessage());
+        for (int i = 0; i < numOfWorkers; i++) {
+        	SubmitOperation worker = new SubmitOperation();
+        	assertDoesNotThrow(() -> worker.setParameters(params));
+        	workers[i] =  new Thread(worker);
         }
-        
+
         try {
-    		for (final Thread w : workers)  
-    			w.start();    			    		
+    		for (final Thread w : workers)
+    			w.start();
 			for (final Thread w : workers)
 				w.join();
 		} catch (InterruptedException e) {
@@ -130,5 +131,27 @@ public class SubmitOperationTest {
 		}
         assertEquals(numOfMMDs, ((TestMessageSubmitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
     }
-    
+
+    private void createMMD(int numOfMMDs, boolean deleteFiles) {
+        for(int i = 0; i < numOfMMDs; i++) {
+        	try (FileWriter fw = new FileWriter(testDir.resolve("submission_" + i + ".mmd").toFile())) {
+        		fw.write(
+	    				"<MessageMetaData xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
+	    				" xmlns=\"http://holodeck-b2b.org/schemas/2014/06/mmd\">" +
+	    				"    <CollaborationInfo>" +
+	    				"        <AgreementRef pmode=\"ex-pm-push\"/>" +
+	    				"        <ConversationId>org:holodeckb2b:test:conversation</ConversationId>" +
+	    				"    </CollaborationInfo>" +
+	    				"    <PayloadInfo deleteFilesAfterSubmit=\"" + deleteFiles + "\">" +
+	    				"        <PartInfo containment=\"attachment\" mimeType=\"image/jpeg\"" +
+	    				"					location=\"dandelion.jpg\"/>" +
+	    				"    </PayloadInfo>" +
+	    				"</MessageMetaData>");
+        	} catch (IOException ex) {
+        		fail("Could not create the MMD files for testing");
+        	}
+        }
+    }
+
+
 }

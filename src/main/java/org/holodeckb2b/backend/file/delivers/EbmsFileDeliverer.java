@@ -32,6 +32,7 @@ import org.holodeckb2b.backend.file.NotifyAndDeliverOperation;
 import org.holodeckb2b.backend.file.ebms.ReceiptElement;
 import org.holodeckb2b.backend.file.ebms.UserMessageElement;
 import org.holodeckb2b.backend.file.mmd.MessageMetaData;
+import org.holodeckb2b.backend.file.mmd.PartInfo;
 import org.holodeckb2b.backend.file.mmd.Property;
 import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
@@ -39,7 +40,6 @@ import org.holodeckb2b.ebms3.packaging.ErrorSignalElement;
 import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
 import org.holodeckb2b.interfaces.general.EbMSConstants;
 import org.holodeckb2b.interfaces.messagemodel.IErrorMessage;
-import org.holodeckb2b.interfaces.messagemodel.IPayload;
 import org.holodeckb2b.interfaces.messagemodel.IReceipt;
 import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
 
@@ -130,10 +130,10 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      *
      * @param dir   The directory where file should be written to.
      */
-    public EbmsFileDeliverer(final String dir) {
+    public EbmsFileDeliverer(final Path dir) {
         super(dir);
     }
-    
+
     /*
      * Payloads should be copied to the delivery directory
      */
@@ -151,12 +151,12 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      */
     @Override
     protected String writeUserMessageInfoToFile(final MessageMetaData mmd) throws IOException {
-    	
+
     	// First set the location as additional part property
     	log.trace("Set payload file locations as properties");
         if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
             // We add the local file location as a Part property
-            for (final IPayload p : mmd.getPayloads()) {
+            for (final PartInfo p : mmd.getPayloads()) {
                 final Property locationProp = new Property();
                 locationProp.setName("org:holodeckb2b:location");
                 locationProp.setValue(p.getContentLocation());
@@ -168,7 +168,7 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
         // Add the information on the user message to the container
         final OMElement  container = createContainerElement();
         UserMessageElement.createElement(container, mmd);
-        log.trace("Information complete, write XML document to file");        
+        log.trace("Information complete, write XML document to file");
         return writeXMLDocument(container, mmd.getMessageId());
     }
 
@@ -228,9 +228,8 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
      * @throws IOException When the XML can not be written to disk
      */
     private String writeXMLDocument(final OMElement xml, final String msgId) throws IOException {
-        final Path msgFilePath = FileUtils.createFileWithUniqueName(directory + "mi-"
-												                + msgId.replaceAll("[^a-zA-Z0-9.-]", "_")
-												                + TMP_EXTENSION);
+        final Path msgFilePath = FileUtils.createFileWithUniqueName(directory.resolve(
+															FileUtils.sanitizeFileName("mi-" + msgId + TMP_EXTENSION)));
 
 		try {
 			final FileWriter fw = new FileWriter(msgFilePath.toString());

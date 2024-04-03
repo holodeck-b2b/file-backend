@@ -16,7 +16,6 @@
  */
 package org.holodeckb2b.backend.file;
 
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +27,7 @@ import org.holodeckb2b.backend.file.delivers.AbstractFileDeliverer;
 import org.holodeckb2b.backend.file.delivers.EbmsFileDeliverer;
 import org.holodeckb2b.backend.file.delivers.MMDDeliverer;
 import org.holodeckb2b.backend.file.delivers.SingleXMLDeliverer;
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.delivery.IDeliveryCallback;
 import org.holodeckb2b.interfaces.delivery.IDeliveryMethod;
@@ -82,7 +82,7 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
     /**
      * The delivery directory path
      */
-    protected String deliveryDir = null;
+    protected Path deliveryDir = null;
     /**
      * The actual implementation of the delivery
      */
@@ -98,25 +98,23 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
      */
     @Override
     public void init(final Map<String, ?> settings) throws MessageDeliveryException {
+    	String sDir = null;
         if (settings != null) {
             try {
-               deliveryDir = (String) settings.get(DELIVERY_DIR_PARAM);
+               sDir = (String) settings.get(DELIVERY_DIR_PARAM);
             } catch (final ClassCastException ex) {
-                throw new MessageDeliveryException("Configuration error! No directory specified!");
             }
         }
+        if (Utils.isNullOrEmpty(sDir))
+        	throw new MessageDeliveryException("Configuration error! No directory specified!");
+
+        deliveryDir = Paths.get(sDir);
+        if (!deliveryDir.isAbsolute())
+        	deliveryDir = HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome().resolve(deliveryDir);
+
         if (!checkDirectory())
             throw new MessageDeliveryException("Configuration error! Specified directory [" + deliveryDir
                                                                         + " does not exits or is not writable!");
-        // Ensure directory path ends with separator
-        deliveryDir = (deliveryDir.endsWith(FileSystems.getDefault().getSeparator()) ? deliveryDir
-                              : deliveryDir + FileSystems.getDefault().getSeparator());
-        if (!checkDirectory()) {
-	        // Directory is not valid
-        	log.error("The specified directory ({}) is not accessible", deliveryDir);
-	        throw new MessageDeliveryException("Specified directory [" + deliveryDir
-	        									+ " does not exits or is not writable!");
-        }
 
         // Check if XML format is specified
         String format = (String) settings.get(FORMAT_PARAM);
@@ -167,23 +165,6 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
      * @return <code>true</code> when directory is valid,<br><code>false</code> if not
      */
     private boolean checkDirectory() {
-        try {
-            Path path = Paths.get(deliveryDir);
-            if (!path.isAbsolute())
-            	path = HolodeckB2BCoreInterface.getConfiguration().getHolodeckB2BHome().resolve(deliveryDir);
-
-            // Test if given path exists and is a directory
-            if (!Files.isDirectory(path) || !Files.isWritable(path))
-                // Not a writable directory!
-                return false;
-
-            deliveryDir = path.toString() + "/";
-
-    		return true;
-
-        } catch (final Exception ex) {
-            return false;
-        }
-
+        return Files.isDirectory(deliveryDir) && Files.isWritable(deliveryDir);
     }
 }

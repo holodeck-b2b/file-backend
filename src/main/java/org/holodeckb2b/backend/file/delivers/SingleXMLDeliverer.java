@@ -16,9 +16,9 @@
  */
 package org.holodeckb2b.backend.file.delivers;
 
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -126,7 +126,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
      *
      * @param dir   The directory where file should be written to.
      */
-    public SingleXMLDeliverer(final String dir) {
+    public SingleXMLDeliverer(final Path dir) {
         super(dir);
     }
 
@@ -137,7 +137,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
     protected boolean payloadsAsFile() {
     	return false;
     }
-    
+
     /**
      * Create the root element of the delivery document.
      *
@@ -155,7 +155,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
     }
 
     /**
-     * Writes the user message meta data and payload data to a single file using the same structure for the meta-data 
+     * Writes the user message meta data and payload data to a single file using the same structure for the meta-data
      * as in the ebMS header.
      *
      * @param mmd           The user message meta data.
@@ -175,13 +175,12 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
         		p.getProperties().add(refProp);
         	}
         }
-        
-        // Create the document and UserMessage child element 
+
+        // Create the document and UserMessage child element
         final OMElement  usrMsgElement = UserMessageElement.createElement(createContainerElement(), mmd);
 
-        Path msgFilePath = FileUtils.createFileWithUniqueName(directory + "message-"
-											                + mmd.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
-											                + TMP_EXTENSION);
+        Path msgFilePath = FileUtils.createFileWithUniqueName(directory.resolve(
+        								FileUtils.sanitizeFileName("message-" + mmd.getMessageId() + TMP_EXTENSION)));
 		log.trace("Message meta data complete, start writing this to file " + msgFilePath.toString());
         try (FileWriter fw = new FileWriter(msgFilePath.toFile())) {
             final XMLStreamWriter xmlWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(fw);
@@ -200,7 +199,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
                     log.trace("Create <Payload> element");
                     xmlWriter.writeStartElement(DELIVERY_NS_URI, "Payload");
                     xmlWriter.writeAttribute("xml:id", "pl-" + i++);
-                    xmlWriter.writeCharacters(encodePayload(p.getContentLocation()));
+                    xmlWriter.writeCharacters(encodePayload(p));
                     xmlWriter.writeEndElement();
                 }
                 log.trace("Close the <Payloads> element");
@@ -227,24 +226,18 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
     /**
      * Helper method create the base64 encoded version of the payload
      *
-     * @param sourceFile        The file to add to the output
+     * @param p the payload
      * @return the base64 encoded payload
      * @throws IOException      When reading from the source or writing to the output fails
      */
-    private String encodePayload(final String sourceFile) throws IOException {
+    private String encodePayload(final IPayload p) throws IOException {
     	final StringWriter b64Payload = new StringWriter();
-        try (FileInputStream fis = new FileInputStream(sourceFile);
+        try (InputStream cis = p.getContent();
         	 Base64EncodingWriterOutputStream b64os = new Base64EncodingWriterOutputStream(b64Payload)) {
-            final byte[] buffer = new byte[4096];
-            int r = fis.read(buffer);
-            while (r > 0) {
-                b64os.write(buffer, 0, r);
-                r = fis.read(buffer);
-            }
+            Utils.copyStream(cis, b64os);
             b64os.complete();
             b64os.flush();
         }
-        
         return b64Payload.toString();
     }
 
