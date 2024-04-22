@@ -126,7 +126,7 @@ class PayloadInfo {
      *
      * @return	the value of the <code>deleteFilesAfterSubmit</code> attribute
      */
-    Boolean shouldDeleteFilesAfterSubmit() {
-        return this.deleteFilesAfterSubmit;
+    boolean shouldDeleteFilesAfterSubmit() {
+        return this.deleteFilesAfterSubmit != null ? this.deleteFilesAfterSubmit : true;
     }
 }

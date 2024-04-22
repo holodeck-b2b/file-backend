@@ -260,8 +260,8 @@ public class MessageMetaData implements IUserMessage {
      * @return  <code>true</code> when the files should be deleted, <code>false</code> if not.
      * @since 2.0-rc2
      */
-    public Boolean shouldDeleteFilesAfterSubmit() {
-        return (payloadInfo != null ? payloadInfo.shouldDeleteFilesAfterSubmit() : null);
+    public boolean shouldDeleteFilesAfterSubmit() {
+        return (payloadInfo != null ? payloadInfo.shouldDeleteFilesAfterSubmit() : true);
     }
 
     /**
