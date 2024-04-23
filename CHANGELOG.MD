@@ -7,9 +7,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 * Refactored for new Holodeck B2B 7.0.0 interfaces
 
-### Fixed
-* NPE when the submission does not contain a payload
-
 ## 1.3.0
 ##### 2023-05-30
 ### Added
