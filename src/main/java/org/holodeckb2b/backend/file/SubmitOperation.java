@@ -132,7 +132,8 @@ public class SubmitOperation extends AbstractWorkerTask {
                 convertPayloadPaths(mmd, f);
                 HolodeckB2BCoreInterface.getMessageSubmitter().submitMessage(mmd);
                 log.info("User message from " + f.getName() + " succesfully submitted to Holodeck B2B");
-                if (mmd.shouldDeleteFilesAfterSubmit())
+                if (mmd.shouldDeleteFilesAfterSubmit() != null ? mmd.shouldDeleteFilesAfterSubmit()
+                											   : removePayloadsDefault)
                 	deletePayloadFiles(mmd);
                 // Change extension to reflect success
                 Files.move(Paths.get(tFileName), FileUtils.createFileWithUniqueName(baseFileName + ".accepted")
@@ -180,10 +181,10 @@ public class SubmitOperation extends AbstractWorkerTask {
 	    	log.trace("Deleting submitted payload files");
 	    	mmd.getPayloads().forEach(p -> {
 				try {
-					Files.deleteIfExists(Paths.get(((PartInfo) p).getContentLocation()));
+					Files.deleteIfExists(Paths.get(p.getContentLocation()));
 				} catch (IOException e) {
 					log.warn("Payload file ({}) could not be deleted, remove manually!",
-							((PartInfo) p).getContentLocation());
+							p.getContentLocation());
 				}
 				log.debug("Deleted submitted payload files");
 	    	});

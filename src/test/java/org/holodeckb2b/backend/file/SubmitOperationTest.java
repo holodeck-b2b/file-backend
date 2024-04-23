@@ -73,8 +73,8 @@ public class SubmitOperationTest {
     }
 
     @Test
-    public void testKeepPayloads() {
-    	createMMD(1, false);
+    public void testKeepPayloadsMMD() {
+    	createMMD(1, true, false);
 
         SubmitOperation worker = new SubmitOperation();
 
@@ -89,8 +89,41 @@ public class SubmitOperationTest {
     }
 
     @Test
-    public void testRemovePayloads() {
-    	createMMD(1, true);
+    public void testRemovePayloadsMMD() {
+    	createMMD(1, true, true);
+
+    	SubmitOperation worker = new SubmitOperation();
+
+    	HashMap<String, Object> params = new HashMap<>();
+    	params.put("watchPath", testDir.toString());
+
+    	assertDoesNotThrow(() -> worker.setParameters(params));
+    	assertDoesNotThrow(() -> worker.run());
+
+    	assertEquals(1, ((TestMessageSubmitter) testCore.getMessageSubmitter()).getAllSubmitted().size());
+    	assertFalse(Files.exists(testDir.resolve("dandelion.jpg")));
+    }
+
+    @Test
+    public void testKeepPayloadsDefault() {
+    	createMMD(1, true, null);
+
+    	SubmitOperation worker = new SubmitOperation();
+
+    	HashMap<String, Object> params = new HashMap<>();
+    	params.put("watchPath", testDir.toString());
+    	params.put("deleteFilesAfterSubmit", "false");
+
+    	assertDoesNotThrow(() -> worker.setParameters(params));
+    	assertDoesNotThrow(() -> worker.run());
+
+    	assertEquals(1, ((TestMessageSubmitter) testCore.getMessageSubmitter()).getAllSubmitted().size());
+    	assertTrue(Files.exists(testDir.resolve("dandelion.jpg")));
+    }
+
+    @Test
+    public void testRemovePayloadsDefault() {
+    	createMMD(1, true, null);
 
     	SubmitOperation worker = new SubmitOperation();
 
@@ -107,7 +140,7 @@ public class SubmitOperationTest {
     @Test
     public void testMultipleWorkers() {
     	final int numOfMMDs = new Random().nextInt(100);
-    	createMMD(numOfMMDs, false);
+    	createMMD(numOfMMDs, true, false);
 
     	final int numOfWorkers = Math.max(1, new Random().nextInt(5));
         HashMap<String, Object> params = new HashMap<>();
@@ -132,7 +165,7 @@ public class SubmitOperationTest {
         assertEquals(numOfMMDs, ((TestMessageSubmitter) HolodeckB2BCoreInterface.getMessageSubmitter()).getAllSubmitted().size());
     }
 
-    private void createMMD(int numOfMMDs, boolean deleteFiles) {
+    private void createMMD(int numOfMMDs, boolean withPayload, Boolean deleteFiles) {
         for(int i = 0; i < numOfMMDs; i++) {
         	try (FileWriter fw = new FileWriter(testDir.resolve("submission_" + i + ".mmd").toFile())) {
         		fw.write(
@@ -141,12 +174,17 @@ public class SubmitOperationTest {
 	    				"    <CollaborationInfo>" +
 	    				"        <AgreementRef pmode=\"ex-pm-push\"/>" +
 	    				"        <ConversationId>org:holodeckb2b:test:conversation</ConversationId>" +
-	    				"    </CollaborationInfo>" +
-	    				"    <PayloadInfo deleteFilesAfterSubmit=\"" + deleteFiles + "\">" +
+	    				"    </CollaborationInfo>");
+        		if (withPayload) {
+        			fw.write("    <PayloadInfo ");
+        			if (deleteFiles != null)
+        				fw.write("deleteFilesAfterSubmit=\"" + deleteFiles.toString() + "\"");
+        			fw.write(">" +
 	    				"        <PartInfo containment=\"attachment\" mimeType=\"image/jpeg\"" +
 	    				"					location=\"dandelion.jpg\"/>" +
-	    				"    </PayloadInfo>" +
-	    				"</MessageMetaData>");
+	    				"    </PayloadInfo>");
+        		}
+				fw.write("</MessageMetaData>");
         	} catch (IOException ex) {
         		fail("Could not create the MMD files for testing");
         	}
