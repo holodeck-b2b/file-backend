@@ -142,15 +142,15 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
     }
 
     @Override
-    public void deliver(IMessageUnit rcvdMsgUnit, IDeliveryCallback callback) throws MessageDeliveryException {
-    	if (!checkDirectory()) {
-	        // Directory is not valid
-        	log.error("The specified directory ({}) is not accessible", deliveryDir);
-	        throw new MessageDeliveryException("Specified directory [" + deliveryDir
-	        									+ " does not exits or is not writable!");
-    	}
+    public void deliver(IMessageUnit rcvdMsgUnit, IDeliveryCallback callback)  {
     	new Thread(() -> {
 	    	try {
+    			if (!checkDirectory()) {
+    				// Directory is not valid
+    				log.error("The specified directory ({}) is not accessible", deliveryDir);
+    				callback.failed(new MessageDeliveryException("Specified directory [" + deliveryDir
+    						+ " does not exits or is not writable!"));
+    			}
 	    		deliver(rcvdMsgUnit);
 	    		callback.success();
 	    	} catch (MessageDeliveryException deliveryFailure) {
