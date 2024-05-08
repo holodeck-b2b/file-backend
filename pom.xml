@@ -11,7 +11,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<holodeckb2b.version>7.0.0-SNAPSHOT</holodeckb2b.version>
+		<holodeckb2b.version>7.0.0</holodeckb2b.version>
 	</properties>
 	<name>Holodeck B2B - File based back end</name>
 	<url>http://www.holodeck-b2b.org/</url>
