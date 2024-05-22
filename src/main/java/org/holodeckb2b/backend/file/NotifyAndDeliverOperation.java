@@ -148,8 +148,7 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
     			if (!checkDirectory()) {
     				// Directory is not valid
     				log.error("The specified directory ({}) is not accessible", deliveryDir);
-    				callback.failed(new MessageDeliveryException("Specified directory [" + deliveryDir
-    						+ " does not exits or is not writable!"));
+    				callback.failed(new MessageDeliveryException("Specified directory does not exits or is not writable!"));
     			}
 	    		deliver(rcvdMsgUnit);
 	    		callback.success();

@@ -110,8 +110,8 @@ public abstract class AbstractFileDeliverer {
             final String outFile = writeUserMessageInfoToFile(mmd);
             log.debug("User message [msgID={}] delivered to {}", mmd.getMessageId(), outFile);
         } catch (final IOException ex) {
-            log.error("An error occurred while delivering the user message [" + mmd.getMessageId()
-                                                                    + "]\n\tError details: " + ex.getMessage());
+            log.error("An error occurred while delivering the user message [{}]\n\tError details: {}",
+            			mmd.getMessageId(), ex.getMessage());
             // Something went wrong writing files to the delivery directory, but some payload files
             // may already been copied and should be deleted
             if (!copiedPLs.isEmpty()) {
@@ -124,8 +124,7 @@ public abstract class AbstractFileDeliverer {
 	                }
             }
             // And signal failure
-            throw new MessageDeliveryException("Unable to deliver user message [" + mmd.getMessageId()
-                                                    + "]. Error details: " + ex.getMessage());
+            throw new MessageDeliveryException("Error trying to deliver user message to file", ex);
         }
     }
 
