@@ -31,16 +31,16 @@ import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
 
 /**
  * Is a facade to {@link UserMessageElement} from the ebMS3/AS4 module of the main Holodeck B2B project that can handle
- * incomplete message meta-data (which can occur when another messaging protocol is used) and leaves out elements 
+ * incomplete message meta-data (which can occur when another messaging protocol is used) and leaves out elements
  * accordingly.
- * 
+ *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
 public class UserMessageElement extends org.holodeckb2b.ebms3.packaging.UserMessageElement {
 
     /**
      * Creates a <code>UserMessage</code> element and adds it to the given parent element (i.e. the <code>Messaging
-     * </code> element, but not checked). 
+     * </code> element, but not checked).
      *
      * @param messaging     The  element this element should be added to
      * @param data          The data to include in the element
@@ -65,9 +65,9 @@ public class UserMessageElement extends org.holodeckb2b.ebms3.packaging.UserMess
         final OMElement partyInfo = f.createOMElement(Q_ELEMENT_NAME, usermessage);
         // Add content, i.e. the from and to element
         ToFromElement.createElement(ElementName.FROM, partyInfo, data.getSender());
-        ToFromElement.createElement(ElementName.TO, partyInfo, data.getReceiver());       
-        // Create the CollaborationInfo element        
-        CollaborationInfoElement.createElement(usermessage, data.getCollaborationInfo());
+        ToFromElement.createElement(ElementName.TO, partyInfo, data.getReceiver());
+        // Create the CollaborationInfo element
+        CollaborationInfoElement.createElement(usermessage, data.getCollaborationInfo(), data.getPModeId());
         // Create the MessageProperties element (if there are message properties)
         final Collection<IProperty> msgProps = data.getMessageProperties();
         if (!Utils.isNullOrEmpty(msgProps))
@@ -77,5 +77,5 @@ public class UserMessageElement extends org.holodeckb2b.ebms3.packaging.UserMess
         PayloadInfoElement.createElement(usermessage, data.getPayloads());
 
         return usermessage;
-    }	
+    }
 }
