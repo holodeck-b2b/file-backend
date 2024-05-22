@@ -46,7 +46,7 @@ public class CollaborationInfo implements ICollaborationInfo {
     @Element(name = "Action", required = false)
     private String              action;
 
-    @Element(name = "ConversationId")
+    @Element(name = "ConversationId", required = false)
     private String              convId;
 
     /**
