@@ -102,8 +102,7 @@ public abstract class AbstractFileDeliverer {
 	                	p.setContentLocation(newPath.toString());
 	                copiedPLs.add(p);
 	            }
-	            log.trace("Copied all payload files, set as new payload info in MMD");
-	            mmd.setPayloads(copiedPLs);
+	            log.trace("Copied all payload files");
 	        }
 
             log.trace("Write message meta data to file");
@@ -222,6 +221,6 @@ public abstract class AbstractFileDeliverer {
             						+ "] could not be saved to file!", ex);
         }
 
-        return targetPath.toAbsolutePath();
+        return targetPath.getFileName();
     }
 }
