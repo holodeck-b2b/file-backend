@@ -34,7 +34,6 @@ import org.holodeckb2b.commons.util.FileUtils;
 import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.core.HolodeckB2BCoreInterface;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
-import org.holodeckb2b.interfaces.submit.IMessageSubmitter;
 import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
 
 /**
@@ -44,10 +43,10 @@ import org.holodeckb2b.interfaces.workerpool.TaskConfigurationException;
  * been submitted, the extension will be changed to <b>accepted</b>. When an error occurs on submit the extension will
  * be changed to <b>rejected</b> and information on the error will be written to a file with the same name but
  * with extension <b>err</b>.
- * <p>By default the payload files are removed after successful submission to the Core. This behaviour can be changed 
+ * <p>By default the payload files are removed after successful submission to the Core. This behaviour can be changed
  * per submission by setting the <code>//PayloadInfo/@deleteFilesAfterSubmit</code> attribute in the MMD or globally
- * by setting the _deleteFilesAfterSubmit_ parameter of the worker. If a value is supplied in the MMD it takes 
- * precedence over the global value configured in the worker. 
+ * by setting the _deleteFilesAfterSubmit_ parameter of the worker. If a value is supplied in the MMD it takes
+ * precedence over the global value configured in the worker.
  *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
@@ -59,7 +58,7 @@ public class SubmitOperation extends AbstractWorkerTask {
     /**
      * Default setting whether the payload file should be removed upon successful submission
      */
-    protected boolean removePayloadsDefault;    
+    protected boolean removePayloadsDefault;
     /**
      * Random numbers are used to create unique temp file names
      */
@@ -67,7 +66,7 @@ public class SubmitOperation extends AbstractWorkerTask {
 
     /**
      * Initialises the worker. This worker has just one parameter, <i>watchPath</i>, which must point to the directory
-     * that contains the MMD files.  
+     * that contains the MMD files.
      */
     @Override
     public void setParameters(final Map<String, ?> parameters) throws TaskConfigurationException {
@@ -87,11 +86,11 @@ public class SubmitOperation extends AbstractWorkerTask {
             log.error("The specified directory to watch for submission [" + watchPath + "] is not accessible to HB2B");
             throw new TaskConfigurationException("Invalid path specified!");
         }
-        
+
         final String globalDelete = (String) parameters.get("deleteFilesAfterSubmit");
         removePayloadsDefault = globalDelete == null || Utils.isTrue(globalDelete);
         log.info("Configured submitter:\n\tWatched directory = {}\n\tRemove payloads = {}", watchPath,
-        			removePayloadsDefault); 
+        			removePayloadsDefault);
     }
 
     @Override
@@ -113,10 +112,10 @@ public class SubmitOperation extends AbstractWorkerTask {
         for(File f : mmdFiles) {
             // Get file name without the extension
             final String  cFileName = f.getAbsolutePath();
-            final String  baseFileName = cFileName.substring(0, cFileName.toLowerCase().indexOf(".mmd"));            
+            final String  baseFileName = cFileName.substring(0, cFileName.toLowerCase().indexOf(".mmd"));
             final String  tFileName = baseFileName + "_" + randomizer.nextInt() + ".processing";
             final File 	  tFile = new File(tFileName);
-            
+
 	        try {
 	            // Directly rename file to prevent processing by another worker
 	        	if (!f.exists() || !f.renameTo(tFile)) {
@@ -131,17 +130,18 @@ public class SubmitOperation extends AbstractWorkerTask {
                 log.trace("Succesfully read message meta data from " + f.getName());
                 // Convert relative paths in payload references to absolute ones to prevent file not found errors
                 convertPayloadPaths(mmd, f);
-                final IMessageSubmitter   submitter = HolodeckB2BCoreInterface.getMessageSubmitter();
-                submitter.submitMessage(mmd, mmd.shouldDeleteFilesAfterSubmit() != null ?
-                											mmd.shouldDeleteFilesAfterSubmit() : removePayloadsDefault);
+                HolodeckB2BCoreInterface.getMessageSubmitter().submitMessage(mmd);
                 log.info("User message from " + f.getName() + " succesfully submitted to Holodeck B2B");
+                if (mmd.shouldDeleteFilesAfterSubmit() != null ? mmd.shouldDeleteFilesAfterSubmit()
+                											   : removePayloadsDefault)
+                	deletePayloadFiles(mmd);
                 // Change extension to reflect success
                 Files.move(Paths.get(tFileName), FileUtils.createFileWithUniqueName(baseFileName + ".accepted")
                            , StandardCopyOption.REPLACE_EXISTING);
 	        } catch (final Exception e) {
 	            // Something went wrong on reading the message meta data
 	            log.error("An error occured when processing message meta data from " + f.getName()
-	                        + ". Details: " + e.getMessage());
+	                        + ". Details: " + Utils.getRootCause(e).getMessage());
 	            // Change extension to reflect error and write error information
 	            try {
 	                final Path rejectFilePath = FileUtils.createFileWithUniqueName(baseFileName + ".rejected");
@@ -169,6 +169,26 @@ public class SubmitOperation extends AbstractWorkerTask {
                 if (!(Paths.get(pi.getContentLocation()).isAbsolute()))
                     pi.setContentLocation(Paths.get(basePath, pi.getContentLocation()).normalize().toString());
             }
+    }
+
+    /**
+     * Helper method to delete the payload files included in the MMD.
+     *
+     * @param mmd	the message meta-data document of the submitted message
+     */
+    private void deletePayloadFiles(final MessageMetaData mmd) {
+	    if (!Utils.isNullOrEmpty(mmd.getPayloads())) {
+	    	log.trace("Deleting submitted payload files");
+	    	mmd.getPayloads().forEach(p -> {
+				try {
+					Files.deleteIfExists(Paths.get(p.getContentLocation()));
+				} catch (IOException e) {
+					log.warn("Payload file ({}) could not be deleted, remove manually!",
+							p.getContentLocation());
+				}
+				log.debug("Deleted submitted payload files");
+	    	});
+    	}
     }
 
     /**

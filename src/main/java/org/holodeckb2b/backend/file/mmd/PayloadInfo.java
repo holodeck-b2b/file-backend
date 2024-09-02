@@ -45,8 +45,8 @@ class PayloadInfo {
     /**
      * The list of <code>PartInfo</code> child elements, must be at least one
      */
-    @ElementList(entry = "PartInfo", inline = true, type = PartInfo.class, required=true)
-    private ArrayList<IPayload>  payloads;
+    @ElementList(entry = "PartInfo", inline = true, required=true)
+    private ArrayList<PartInfo>  payloads;
 
     /**
      * Default constructor creates empty meta data object.
@@ -59,7 +59,7 @@ class PayloadInfo {
      *
      * @param payloadInfo The meta-data on the individual payloads
      */
-    PayloadInfo(final Collection<IPayload> payloadInfo) {
+    PayloadInfo(final Collection<? extends IPayload> payloadInfo) {
         this(payloadInfo, null);
     }
 
@@ -69,7 +69,7 @@ class PayloadInfo {
      * @param payloadInfo           The meta-data on the individual payloads
      * @param deleteAfterSubmit     Value to use for the "delete flag"
      */
-    PayloadInfo(final Collection<IPayload> payloadInfo, final Boolean deleteAfterSubmit) {
+    PayloadInfo(final Collection<? extends IPayload> payloadInfo, final Boolean deleteAfterSubmit) {
         this.deleteFilesAfterSubmit = deleteAfterSubmit;
         setPayloadInfo(payloadInfo);
     }
@@ -79,7 +79,7 @@ class PayloadInfo {
      *
      * @param payloadInfo The meta-data on the individual payloads
      */
-    void setPayloadInfo(final Collection<IPayload> payloadInfo) {
+    void setPayloadInfo(final Collection<? extends IPayload> payloadInfo) {
         if (!Utils.isNullOrEmpty(payloadInfo)) {
             this.payloads = new ArrayList<>(payloadInfo.size());
             for(final IPayload p : payloadInfo)
@@ -106,7 +106,7 @@ class PayloadInfo {
      *
      * @return The information will be returned as a Collection of IPayload implementations.
      */
-    Collection<IPayload> getPayloads() {
+    Collection<PartInfo> getPayloads() {
         return payloads;
     }
 

@@ -16,16 +16,22 @@
  */
 package org.holodeckb2b.backend.file.mmd;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.holodeckb2b.commons.util.Utils;
 import org.holodeckb2b.interfaces.general.IDescription;
 import org.holodeckb2b.interfaces.general.IProperty;
 import org.holodeckb2b.interfaces.general.ISchemaReference;
 import org.holodeckb2b.interfaces.messagemodel.IPayload;
+import org.holodeckb2b.interfaces.storage.providers.StorageException;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
+import org.simpleframework.xml.Transient;
 import org.simpleframework.xml.core.PersistenceException;
 import org.simpleframework.xml.core.Validate;
 
@@ -65,6 +71,9 @@ public class PartInfo implements IPayload {
     @Attribute(name="location", required=false)
     private String  location;
 
+    @Transient
+    private IPayload contentSrc;
+
     /**
      * Default constructor
      */
@@ -78,9 +87,9 @@ public class PartInfo implements IPayload {
      * @param data  The data to use for the new object
      */
     public PartInfo(final IPayload data) {
-        this.location = data.getContentLocation();
         this.uri = data.getPayloadURI();
         this.mimeType = data.getMimeType();
+        this.contentSrc = data;
 
         setContainment(data.getContainment());
         setSchemaReference(data.getSchemaReference());
@@ -93,13 +102,24 @@ public class PartInfo implements IPayload {
      * <p>If the payload is or should be contained in the SOAP body or as an attachment the location of the payload
      * document must be specified.
      *
-     * @throws PersistenceException When the payload is contained in either SOAP body or attachment but no location is
+     * @throws StorageException When the payload is contained in either SOAP body or attachment but no location is
      *                              specified
      */
     @Validate
     public void validate() throws PersistenceException {
-        if (!"external".equalsIgnoreCase(this.containment) && (location == null || location.isEmpty()))
-            throw new PersistenceException("location attributed is required for containment type " + containment, (Object[]) null);
+        if (!"external".equalsIgnoreCase(this.containment) && Utils.isNullOrEmpty(location))
+    		throw new PersistenceException("location attributed is required for containment type " + containment,
+        										(Object[]) null);
+    }
+
+    @Override
+    public InputStream getContent() throws IOException {
+    	if (!Utils.isNullOrEmpty(this.location))
+    		return new FileInputStream(location);
+    	else if (contentSrc != null)
+    		return contentSrc.getContent();
+    	else
+    		return null;
     }
 
     @Override
@@ -165,7 +185,6 @@ public class PartInfo implements IPayload {
             this.schemaRef = null;
     }
 
-    @Override
     public String getContentLocation() {
         return location;
     }

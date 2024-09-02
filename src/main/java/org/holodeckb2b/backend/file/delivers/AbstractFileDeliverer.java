@@ -16,7 +16,9 @@
  */
 package org.holodeckb2b.backend.file.delivers;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,9 +41,9 @@ import org.holodeckb2b.interfaces.messagemodel.IUserMessage;
 
 /**
  * Is the base class for the implementation of the file based delivery methods. It contains the functionality to move
- * the payloads of a User Message to the target directory and adapt the meta-data accordingly. The writing of the 
- * message meta data file has to be implemented in the subclass. This also includes writing the meta-data of signal 
- * messages to file. 
+ * the payloads of a User Message to the target directory and adapt the meta-data accordingly. The writing of the
+ * message meta data file has to be implemented in the subclass. This also includes writing the meta-data of signal
+ * messages to file.
  *
  * @author Sander Fieten (sander at holodeck-b2b.org)
  */
@@ -50,8 +52,8 @@ public abstract class AbstractFileDeliverer {
 	 * Extension to use when writing the files to disk. This extension is used to prevent the back-end from picking up
 	 * files that are still being written.
 	 */
-	protected static final String TMP_EXTENSION = ".processing"; 
-			
+	protected static final String TMP_EXTENSION = ".processing";
+
 	/**
 	 * Logger.
 	 */
@@ -60,17 +62,17 @@ public abstract class AbstractFileDeliverer {
 	/**
      * The where the files should be stored
      */
-    protected String  directory = null;
+    protected Path  directory = null;
 
     /**
      * Constructs a new deliverer which will write the files to the given directory.
      *
      * @param dir   The directory where file should be written to.
      */
-    public AbstractFileDeliverer(final String dir) {
+    public AbstractFileDeliverer(final Path dir) {
         this.directory = dir;
     }
-    
+
     public void deliver(final IMessageUnit rcvdMsgUnit) throws MessageDeliveryException {
         if (rcvdMsgUnit instanceof IUserMessage)
             deliverUserMessage((IUserMessage) rcvdMsgUnit);
@@ -89,34 +91,31 @@ public abstract class AbstractFileDeliverer {
         log.debug("Delivering user message with msgId=" + usrMsgUnit.getMessageId());
 
         // We first convert the user message into a MMD document so info can be edited
-        final MessageMetaData mmd = new MessageMetaData(usrMsgUnit);        
-        final Collection<IPayload>    copiedPLs = new ArrayList<>();
+        final MessageMetaData mmd = new MessageMetaData(usrMsgUnit);
+        final Collection<PartInfo>    copiedPLs = new ArrayList<>();
         try {
 	        if (!Utils.isNullOrEmpty(mmd.getPayloads()) && payloadsAsFile()) {
-	        	log.debug("Copy all payload files to delivery directory");
-		        // The payload files should be copied to delivery directory and the MMD info should be
-	        	// updated to reference the new location of the payloads
-	            for(final IPayload p : mmd.getPayloads()) {
-	                final Path newPath = copyPayloadFile(p, mmd.getMessageId());
+	        	log.debug("Write all payloads to delivery directory");
+	            for(final PartInfo p : mmd.getPayloads()) {
+	                final Path newPath = savePayload(p, mmd.getMessageId());
 	                if (newPath != null)
-	                        ((PartInfo) p).setContentLocation(newPath.toString());
+	                	p.setContentLocation(newPath.toString());
 	                copiedPLs.add(p);
 	            }
-	            log.trace("Copied all payload files, set as new payload info in MMD");
-	            mmd.setPayloads(copiedPLs);
+	            log.trace("Copied all payload files");
 	        }
-	            
+
             log.trace("Write message meta data to file");
             final String outFile = writeUserMessageInfoToFile(mmd);
             log.debug("User message [msgID={}] delivered to {}", mmd.getMessageId(), outFile);
         } catch (final IOException ex) {
-            log.error("An error occurred while delivering the user message [" + mmd.getMessageId()
-                                                                    + "]\n\tError details: " + ex.getMessage());
+            log.error("An error occurred while delivering the user message [{}]\n\tError details: {}",
+            			mmd.getMessageId(), ex.getMessage());
             // Something went wrong writing files to the delivery directory, but some payload files
             // may already been copied and should be deleted
-            if (!copiedPLs.isEmpty()) {            	
+            if (!copiedPLs.isEmpty()) {
                 log.trace("Remove already copied payload files from delivery directory");
-                for(final IPayload p : copiedPLs)
+                for(final PartInfo p : copiedPLs)
                 	try {
                 		Files.deleteIfExists(Paths.get(p.getContentLocation()));
 	                } catch (IOException io) {
@@ -124,8 +123,7 @@ public abstract class AbstractFileDeliverer {
 	                }
             }
             // And signal failure
-            throw new MessageDeliveryException("Unable to deliver user message [" + mmd.getMessageId()
-                                                    + "]. Error details: " + ex.getMessage());
+            throw new MessageDeliveryException("Error trying to deliver user message to file", ex);
         }
     }
 
@@ -137,14 +135,14 @@ public abstract class AbstractFileDeliverer {
      * @throws IOException  When the information could not be written to disk.
      */
     protected abstract String writeUserMessageInfoToFile(MessageMetaData mmd) throws IOException;
-    
+
     /**
      * Indicates whether the payloads included with the user message should be copied to the delivery directory.
-     * 
+     *
      * @return	<code>true</code> if the payloads should be copied to the delivery directory, <code>false</code> if not
      */
-    protected abstract boolean payloadsAsFile(); 
-    
+    protected abstract boolean payloadsAsFile();
+
     /**
      * Delivers the signal message (Error or Receipt) to business application.
      *
@@ -152,13 +150,13 @@ public abstract class AbstractFileDeliverer {
      * @throws MessageDeliveryException When an error occurs while delivering the signal message to the business
      *                                  application
      */
-    protected abstract void deliverSignalMessage(ISignalMessage sigMsgUnit) throws MessageDeliveryException;    
-    
+    protected abstract void deliverSignalMessage(ISignalMessage sigMsgUnit) throws MessageDeliveryException;
+
     /**
-     * Helper method that will change the temporary "processing" extension into the final "xml" extension. As there 
-     * could already exist a file with the same name and "xml" extension the method calls {@link 
+     * Helper method that will change the temporary "processing" extension into the final "xml" extension. As there
+     * could already exist a file with the same name and "xml" extension the method calls {@link
      * Utils#createFileWithUniqueName(String)} to ensure that the xml file can be written.
-     *  
+     *
      * @param tmpFilePath	the path to the temp file
      * @return				the path to the xml file
      * @throws IOException	when the file could not be moved
@@ -166,60 +164,63 @@ public abstract class AbstractFileDeliverer {
     protected String changeExt(Path tmpFilePath) throws IOException {
     	String filename = tmpFilePath.toString();
     	filename = filename.substring(0, filename.lastIndexOf(TMP_EXTENSION)) + ".xml";
-    	
+
     	return Files.move(tmpFilePath, FileUtils.createFileWithUniqueName(filename), StandardCopyOption.REPLACE_EXISTING)
-    				.toString();    	
+    				.toString();
     }
-    
+
     /**
-     * Helper method to copy a the payload content to <i>delivery directory</i>.
+     * Helper method to save the payload content to <i>delivery directory</i>.
      *
      * @param p         The payload for which the content must be copied
      * @param msgId     The message-id of the message that contains the payload, used for name the file
      * @return          The path where the payload content is now stored
      * @throws IOException  When the payload content could not be copied to the <i>delivery directory</i>
      */
-    private Path copyPayloadFile(final IPayload p, final String msgId) throws IOException {
+    private Path savePayload(final IPayload p, final String msgId) throws IOException {
         // If payload was external to message, it is not processed by Holodeck B2B, so no content to move
         if (IPayload.Containment.EXTERNAL == p.getContainment())
             return null;
 
         // Compose a file name for the payload file, based on msgId and href
         String plRef = p.getPayloadURI();
-        plRef = (plRef == null || plRef.isEmpty() ? "body" : plRef);
+        plRef = Utils.isNullOrEmpty(plRef) ? "body" : plRef;
         // If this was a attachment the reference is a a MIME Content-id. As these are also quite lengthy we shorten
         // it to the left part
         if (plRef.indexOf("@") > 0)
             plRef = plRef.substring(0, plRef.indexOf("@"));
 
-        final Path sourcePath = Paths.get(p.getContentLocation());
         // Try to set nice extension based on MIME Type of payload
         String mimeType = p.getMimeType();
-        if (mimeType == null || mimeType.isEmpty()) {
+        if (Utils.isNullOrEmpty(mimeType)) {
             // No MIME type given in message, try to detect from content
-            try { mimeType = FileUtils.detectMimeType(sourcePath.toFile()); }
-            catch (final IOException ex) { mimeType = null; } // Unable to detect the MIME Type
+            try (InputStream cis = p.getContent()) {
+            	mimeType = FileUtils.detectMimeType(cis);
+            } catch (final IOException ex) { mimeType = null; } // Unable to detect the MIME Type
         }
         final String ext = FileUtils.getExtension(mimeType);
 
-        final Path targetPath = FileUtils.createFileWithUniqueName(directory + "pl-"
-                                                               + (msgId + "-" + plRef).replaceAll("[^a-zA-Z0-9.-]", "_")
-                                                               + (ext != null ? ext : ""));
-
-        try {
-            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (final Exception ex) {
-            // Can not move payload file -> delivery not possible
+        final Path targetPath = FileUtils.createFileWithUniqueName(directory.resolve(
+        										FileUtils.sanitizeFileName("pl-" + msgId + "-" + plRef
+        																				 + (ext != null ? ext : ""))));
+        try (InputStream cis = p.getContent(); FileOutputStream fos = new FileOutputStream(targetPath.toFile())) {
+        	log.trace("Saving payload ({}) data to file", p.getPayloadURI());
+        	Utils.copyStream(cis, fos);
+        	log.debug("Saved payload ({}) data to file", p.getPayloadURI());
+        } catch (final IOException ex) {
+        	log.error("Error writing payload ({}) content to file {} : {}", p.getPayloadURI(), targetPath.toString(),
+        				ex.getMessage());
+            // Could not write payload data to file -> delivery not possible
             // Try to remove the already created file
             try {
                 Files.deleteIfExists(targetPath);
             } catch (IOException io) {
                 log.error("Could not remove temp file [" + targetPath.toString() + "]! Remove manually.");
             }
-            throw new IOException("Unable to deliver message because payload file ["
-                            + p.getContentLocation() + "] can not be moved!", ex);
+            throw new IOException("Unable to deliver message because payload [" + p.getPayloadURI()
+            						+ "] could not be saved to file!", ex);
         }
 
-        return targetPath.toAbsolutePath();
+        return targetPath.getFileName();
     }
 }

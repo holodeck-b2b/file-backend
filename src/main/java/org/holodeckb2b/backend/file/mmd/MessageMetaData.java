@@ -17,7 +17,9 @@
 package org.holodeckb2b.backend.file.mmd;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -112,16 +114,29 @@ public class MessageMetaData implements IUserMessage {
             // Given file must exist and be readable to be able to read MMD
             throw new Exception("Specified MMD file ["+mmdFile.getAbsolutePath()+"] not found or no permission to read!");
 
-        MessageMetaData mmd = null;
-        try {
-            final Serializer  serializer = new Persister();
-            mmd = serializer.read(MessageMetaData.class, mmdFile);
-        } catch (final Exception ex) {
-            // The specified file could not be read as an MMD document
-            throw new Exception("Problem reading MMD from " + mmdFile.getAbsolutePath(), ex);
-        }
+        try (FileInputStream fis = new FileInputStream(mmdFile)) {
+        	return createFromStream(fis);
+    	} catch (IOException readError) {
+    		throw new Exception("Could not parse MMD from " + mmdFile.getAbsolutePath(), readError.getCause());
+    	}
+    }
 
-        return mmd;
+    /**
+     * Creates a new <code>MessageMetaData</code> object for the user message unit
+     * described by the XML document in the specified {@see InputStream}.
+     *
+     * @param  is 			The input stream that contains the meta data
+     * @return              A <code>MessageMetaData</code> for the message meta
+     *                      data contained in the given file
+     * @throws IOException  When the specified file is not found, readable or
+     *                      does not contain a MMD document.
+     */
+    public static MessageMetaData createFromStream(final InputStream is) throws IOException {
+        try {
+        	return new Persister().read(MessageMetaData.class, is);
+        } catch (Throwable parseError) {
+        	throw new IOException("Could not parse MMD from stream", parseError);
+        }
     }
 
     /**
@@ -205,7 +220,7 @@ public class MessageMetaData implements IUserMessage {
     		r = new AgreementReference();
     		this.collabInfo.setAgreement(r);
     	}
-    	r.setPModeId(pmodeId);    	 
+    	r.setPModeId(pmodeId);
     }
 
     @Override
@@ -224,11 +239,11 @@ public class MessageMetaData implements IUserMessage {
     }
 
     @Override
-    public Collection<IPayload> getPayloads() {
+    public Collection<PartInfo> getPayloads() {
         return (payloadInfo != null ? payloadInfo.getPayloads() : null);
     }
 
-    public void setPayloads(final Collection<IPayload> pl) {
+    public void setPayloads(final Collection<? extends IPayload> pl) {
         if (Utils.isNullOrEmpty(pl))
             this.payloadInfo = null;
         else if (this.payloadInfo == null)
@@ -258,7 +273,7 @@ public class MessageMetaData implements IUserMessage {
      */
     public void setDeleteFilesAfterSubmit(final Boolean delete) {
     	if (delete != null && this.payloadInfo == null)
-            this.payloadInfo = new PayloadInfo();    	
+            this.payloadInfo = new PayloadInfo();
     	if (payloadInfo != null)
     		this.payloadInfo.setDeleteFilesAfterSubmit(delete);
     }
@@ -333,15 +348,6 @@ public class MessageMetaData implements IUserMessage {
      */
     @Override
     public List<IMessageUnitProcessingState> getProcessingStates() {
-        return null;
-    }
-
-    /**
-     * <b>Not supported</b>
-     * @return
-     */
-    @Override
-    public IMessageUnitProcessingState getCurrentProcessingState() {
         return null;
     }
 }
