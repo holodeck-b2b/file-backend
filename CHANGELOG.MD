@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.0.0
-##### 
+##### 2024-09-02
 ### Changed
 * Refactored for new Holodeck B2B 7.0.0 interfaces
 * ConversationId is now optional in the MMD files
