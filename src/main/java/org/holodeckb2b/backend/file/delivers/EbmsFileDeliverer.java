@@ -125,13 +125,8 @@ public class EbmsFileDeliverer extends AbstractFileDeliverer {
     private static final QName ROOT_QNAME = new QName(EbMSConstants.EBMS3_NS_URI, "Messaging",
                                                            EbMSConstants.EBMS3_NS_PREFIX);
 
-    /**
-     * Constructs a new deliverer which will write the files to the given directory.
-     *
-     * @param dir   The directory where file should be written to.
-     */
-    public EbmsFileDeliverer(final Path dir) {
-        super(dir);
+    public EbmsFileDeliverer(final Path dir, final boolean absolutePayloadPaths) {
+        super(dir, absolutePayloadPaths);
     }
 
     /*

@@ -27,10 +27,13 @@ import org.holodeckb2b.interfaces.delivery.MessageDeliveryException;
  */
 @Deprecated
 public class FileDeliveryFactory extends NotifyAndDeliverOperation {
-	
+
+	@Deprecated
 	@Override
 	public void init(Map<String, ?> settings) throws MessageDeliveryException {
 		LogManager.getLogger().warn("org.holodeckb2b.deliverymethod.file.FileDeliveryFactory is deprecated! Use org.holodeckb2b.backend.file.NotifyAndDeliverOperation instead");
+		// Add absolute path parameter to settings if not present so the old behaviour is kept
+		((Map<String, String>) settings).putIfAbsent(ABS_PATH_PARAM, "true");
 		super.init(settings);
 	}
 }

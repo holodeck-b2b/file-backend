@@ -127,7 +127,7 @@ public class SingleXMLDeliverer extends EbmsFileDeliverer {
      * @param dir   The directory where file should be written to.
      */
     public SingleXMLDeliverer(final Path dir) {
-        super(dir);
+        super(dir, false);
     }
 
     /*

@@ -140,7 +140,7 @@ class AbstractFileDelivererTest {
 	class TestImpl extends AbstractFileDeliverer {
 
 		public TestImpl(Path dir) {
-			super(dir);
+			super(dir, false);
 		}
 
 		@Override

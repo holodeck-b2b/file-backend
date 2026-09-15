@@ -50,14 +50,19 @@ import org.holodeckb2b.interfaces.messagemodel.IMessageUnit;
  *              <i>base64</i> encoded. This format is defined by the XML schema definition with namespace <code>
  *              http://holodeck-b2b.org/schemas/2018/01/delivery/single_xml</code></dd>
  * </dl>
- * <p>NOTE: In both the <i>ebms</i> and <i>single_xml</i> format the meta-data on the <i>Receipt</i> content does not
+ * <p>NOTES:<ol>
+ * <li>Which format is requested must be specified when creating the factory using the "<i>format</i>" parameter. If not
+ * specified the <i>"ebms"</i> format will be used as default. Furthermore the directory where to write the files MUST
+ * be specified using the "<i>deliveryDirectoy</i>" setting.</li>
+ * <li>The location of the payload files included in the <i>mmd</i> and <i>ebms</i> formats by default is a path
+ * relative to the location of the meta-data file. This can be changed to absolute paths by including the
+ * "<i>absolutePayloadPaths</i>" parameter and setting it to <i>true</i>.</li>
+ * <li>In both the <i>ebms</i> and <i>single_xml</i> format the meta-data on the <i>Receipt</i> content does not
  * include its content as included in the ebMS header but only an indication of what element was included. See the XML
  * schema with namespace <code>http://holodeck-b2b.org/schemas/2015/08/delivery/ebms/receiptchild</code> for the
- * definition of the element that is included as Receipt content.
- * <p>Which format is requested must be specified when creating the factory using the "<i>format</i>" parameter. If not
- * specified the <i>"ebms"</i> format will be used as default. Furthermore the directory where to write the files MUST
- * be specified using the "<i>deliveryDirectoy</i>" setting.
- * <p>This delivery method supports the asynchronous delivery of the messages.
+ * definition of the element that is included as Receipt content.</li>
+ * <li>This delivery method supports the asynchronous delivery of the messages.</li>
+ * </ol>
  *
  * <p>This back-end was originally included in the Holodeck B2B Core project as the default back-end integration. But
  * since it is a non essential part it has been split into a separate extension.
@@ -78,6 +83,11 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
      * The name of the parameter for the format
      */
     public static final String FORMAT_PARAM = "format";
+    /**
+     * The name of the parameter for indication whether the payloads paths should be absolute
+     */
+    public static final String ABS_PATH_PARAM = "absolutePayloadPaths";
+
 
     /**
      * The delivery directory path
@@ -116,17 +126,21 @@ public class NotifyAndDeliverOperation implements IDeliveryMethod {
             throw new MessageDeliveryException("Configuration error! Specified directory [" + deliveryDir
                                                                         + " does not exits or is not writable!");
 
+        boolean absPayloadPaths = Utils.isTrue((String) settings.get(ABS_PATH_PARAM));
+
         // Check if XML format is specified
         String format = (String) settings.get(FORMAT_PARAM);
+        if (format == null)
+        	format = "";
         switch (format) {
             case "single_xml" :
                 deliverer = new SingleXMLDeliverer(deliveryDir); break;
             case "mmd" :
-                deliverer = new MMDDeliverer(deliveryDir); break;
+                deliverer = new MMDDeliverer(deliveryDir, absPayloadPaths); break;
             case "ebms" :
             default:
             	format = "ebms";
-                deliverer = new EbmsFileDeliverer(deliveryDir);
+                deliverer = new EbmsFileDeliverer(deliveryDir, absPayloadPaths);
         }
         log.info("Initialised file delivery method using {} format to {}", format, deliveryDir);
     }

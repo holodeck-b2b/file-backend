@@ -65,12 +65,19 @@ public abstract class AbstractFileDeliverer {
     protected Path  directory = null;
 
     /**
+     * Indicates if the meta-data file should include the should include the absolute paths to the payloads
+     */
+    protected boolean useAbsolutePaths = false;
+
+    /**
      * Constructs a new deliverer which will write the files to the given directory.
      *
      * @param dir   The directory where file should be written to.
+     * @param absolutePayloadPaths  Whether the meta-data file should include the absolute paths to the payloads
      */
-    public AbstractFileDeliverer(final Path dir) {
+    public AbstractFileDeliverer(final Path dir, final boolean absolutePayloadPaths) {
         this.directory = dir;
+        this.useAbsolutePaths = absolutePayloadPaths;
     }
 
     public void deliver(final IMessageUnit rcvdMsgUnit) throws MessageDeliveryException {
@@ -99,7 +106,7 @@ public abstract class AbstractFileDeliverer {
 	            for(final PartInfo p : mmd.getPayloads()) {
 	                final Path newPath = savePayload(p, mmd.getMessageId());
 	                if (newPath != null)
-	                	p.setContentLocation(newPath.toString());
+	                	p.setContentLocation(useAbsolutePaths ? newPath.toString() : newPath.getFileName().toString());
 	                copiedPLs.add(p);
 	            }
 	            log.trace("Copied all payload files");
@@ -221,6 +228,6 @@ public abstract class AbstractFileDeliverer {
             						+ "] could not be saved to file!", ex);
         }
 
-        return targetPath.getFileName();
+        return targetPath;
     }
 }

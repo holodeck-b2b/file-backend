@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## 2.1.0
+##### 2026-09-15
+### Added
+* _absolutePayloadPaths_ parameter to `org.holodeckb2b.backend.file.NotifyAndDeliverOperation` which can be used to indicate
+ that the reference to the payload files when using the _mmd_ or _ebms_ format should be absolute paths. The default 
+ setting is _false_ (i.e. use relative paths) so behavior is backward compatible.
+ NOTE: For better backward compatibility with the old `org.holodeckb2b.deliverymethod.file.FileDeliveryFactory` this class
+ uses _true_ as the default.
+
 ## 2.0.1
 ##### 2026-03-03
 ### Fixed

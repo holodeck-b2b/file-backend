@@ -43,8 +43,8 @@ import org.holodeckb2b.interfaces.messagemodel.ISignalMessage;
  */
 public class MMDDeliverer extends AbstractFileDeliverer {
 
-    public MMDDeliverer(final Path dir) {
-        super(dir);
+    public MMDDeliverer(final Path dir, final boolean absolutePayloadPaths) {
+        super(dir, absolutePayloadPaths);
     }
 
     @Override
