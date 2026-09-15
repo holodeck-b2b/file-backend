@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## 2.0.1
+##### 2026-03-03
+### Fixed
+* Exception on creation of delivery method when no format specified [#12](https://github.com/holodeck-b2b/file-backend/issues/12)
+
+### Removed
+* Redundant import in `org.holodeckb2b.backend.file.mmd.PartInfo`
+
 ## 2.0.0
 ##### 2024-09-02
 ### Changed
